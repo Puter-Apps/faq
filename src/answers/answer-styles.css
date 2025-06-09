@@ -1,0 +1,241 @@
+/* answers/answer-styles.css */
+:root {
+    --answer-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --answer-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+
+    /* Light Theme for Answer Content */
+    --answer-bg-light: #ffffff;
+    --answer-text-primary-light: #212529;
+    --answer-text-secondary-light: #495057;
+    --answer-accent-light: #007bff;
+    --answer-border-light: #dee2e6;
+    /* For Prism.js code blocks - light theme */
+    --answer-pre-bg-light: #f6f8fa; /* Common light background for code */
+    --answer-pre-text-light: #24292e; /* Default text color, Prism will override syntax */
+    --answer-pre-border-light: #e1e4e8;
+    /* For inline code - light theme */
+    --answer-inline-code-bg-light: #eff1f3;
+    --answer-inline-code-text-light: #24292e;
+
+
+    /* Dark Theme for Answer Content */
+    --answer-bg-dark: #282c34;
+    --answer-text-primary-dark: #e1e1e1;
+    --answer-text-secondary-dark: #adb5bd;
+    --answer-accent-dark: #61dafb;
+    --answer-border-dark: #3a4048;
+    /* For Prism.js code blocks - dark theme */
+    --answer-pre-bg-dark: #1e1e1e; /* Common dark background for code (like VS Code dark) */
+    --answer-pre-text-dark: #d4d4d4; /* Default text color, Prism will override syntax */
+    --answer-pre-border-dark: #333333;
+    /* For inline code - dark theme */
+    --answer-inline-code-bg-dark: #363b42;
+    --answer-inline-code-text-dark: #d4d4d4;
+}
+
+/* Basic reset and body styles */
+body {
+    font-family: var(--answer-font-sans);
+    line-height: 1.6;
+    padding: 20px 25px;
+    margin: 0;
+    background-color: var(--answer-bg-light);
+    color: var(--answer-text-primary-light);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    box-sizing: border-box;
+    height: 100%;
+    overflow-y: auto;
+}
+
+html.dark-mode body,
+body.dark-mode {
+    background-color: var(--answer-bg-dark);
+    color: var(--answer-text-primary-dark);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--answer-text-primary-light);
+    border-bottom: 1px solid var(--answer-border-light);
+    padding-bottom: 10px;
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+}
+h1:first-child, h2:first-child, h3:first-child {
+    margin-top: 0;
+}
+h1 { font-size: 1.8em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.3em; }
+
+html.dark-mode h1, html.dark-mode h2, html.dark-mode h3, html.dark-mode h4, html.dark-mode h5, html.dark-mode h6,
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+    color: var(--answer-text-primary-dark);
+    border-bottom-color: var(--answer-border-dark);
+}
+
+/* Paragraphs */
+p {
+    margin-bottom: 1em;
+    color: var(--answer-text-secondary-light);
+}
+html.dark-mode p,
+body.dark-mode p {
+    color: var(--answer-text-secondary-dark);
+}
+
+/* Links */
+a {
+    color: var(--answer-accent-light);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+html.dark-mode a,
+body.dark-mode a {
+    color: var(--answer-accent-dark);
+}
+
+/* Lists */
+ul, ol {
+    margin-bottom: 1em;
+    padding-left: 20px; /* Default padding for lists */
+}
+li {
+    margin-bottom: 0.5em;
+}
+
+/* --- Code Block Styling (for Prism.js) --- */
+pre[class*="language-"] {
+    background-color: var(--answer-pre-bg-light);
+    color: var(--answer-pre-text-light); /* Prism theme will override specific token colors */
+    padding: 1em;
+    margin: 1em 0 1.5em 0;
+    border-radius: 6px; /* Slightly larger radius for pre blocks */
+    overflow: auto;
+    border: 1px solid var(--answer-pre-border-light);
+    font-family: var(--answer-font-mono);
+    font-size: 0.9em; /* Consistent code block font size */
+    line-height: 1.5;
+    -webkit-overflow-scrolling: touch;
+    white-space: pre; /* Ensure whitespace is preserved */
+    word-wrap: normal; /* Allow horizontal scrolling for long lines */
+}
+
+html.dark-mode pre[class*="language-"],
+body.dark-mode pre[class*="language-"] {
+    background-color: var(--answer-pre-bg-dark);
+    color: var(--answer-pre-text-dark);
+    border-color: var(--answer-pre-border-dark);
+}
+
+/* Ensure code inside pre takes on the pre's font and has no extra styling */
+pre[class*="language-"] > code[class*="language-"] {
+    font-family: inherit; /* Inherit from pre */
+    background: none;
+    padding: 0;
+    margin: 0;
+    font-size: 1em; /* Relative to pre */
+    color: inherit; /* Prism will color this */
+    line-height: inherit;
+    white-space: inherit; /* Inherit pre's whitespace handling */
+    text-shadow: none; /* Remove any text shadow from Prism themes if not desired */
+}
+
+/* --- Inline Code Styling --- */
+code:not(pre code) { /* Target inline code, not code inside pre */
+    font-family: var(--answer-font-mono);
+    background-color: var(--answer-inline-code-bg-light);
+    color: var(--answer-inline-code-text-light);
+    padding: 0.2em 0.4em;
+    border-radius: 4px;
+    font-size: 0.875em; /* Slightly smaller than body text */
+    border: 1px solid var(--answer-pre-border-light); /* Subtle border for inline code */
+}
+
+html.dark-mode code:not(pre code),
+body.dark-mode code:not(pre code) {
+    background-color: var(--answer-inline-code-bg-dark);
+    color: var(--answer-inline-code-text-dark);
+    border-color: var(--answer-pre-border-dark);
+}
+
+
+/* --- Prism.js Line Numbers Plugin Styling --- */
+/* (These styles are often included in prism-line-numbers.css, but providing base theming here is good) */
+pre.line-numbers {
+    position: relative;
+    padding-left: 3.8em; /* Space for line numbers */
+    counter-reset: linenumber;
+}
+
+pre.line-numbers > code {
+    position: relative;
+    white-space: inherit; /* Crucial for line numbers */
+}
+
+.line-numbers .line-numbers-rows {
+    position: absolute;
+    pointer-events: none;
+    top: 1em; /* Match pre padding */
+    font-size: 100%; /* Match code font size */
+    left: 0;
+    width: 3em; /* Width of the line number gutter */
+    letter-spacing: -1px;
+    border-right: 1px solid var(--answer-border-light);
+    user-select: none;
+    padding-right: 0; /* Reset padding if plugin adds its own */
+}
+
+.line-numbers-rows > span {
+    pointer-events: none;
+    display: block;
+    counter-increment: linenumber;
+}
+
+.line-numbers-rows > span:before {
+    content: counter(linenumber);
+    color: #999; /* Light mode line number color */
+    display: block;
+    padding-right: 0.8em;
+    text-align: right;
+}
+
+html.dark-mode .line-numbers .line-numbers-rows,
+body.dark-mode .line-numbers .line-numbers-rows {
+    border-right-color: var(--answer-border-dark);
+}
+
+html.dark-mode .line-numbers-rows > span:before,
+body.dark-mode .line-numbers-rows > span:before {
+    color: #6e7681; /* Dark mode line number color (GitHub-like) */
+}
+
+/* Scrollbar styling for the iframe content */
+html.dark-mode ::-webkit-scrollbar,
+body.dark-mode ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+html.dark-mode ::-webkit-scrollbar-track,
+body.dark-mode ::-webkit-scrollbar-track {
+    background: transparent;
+}
+html.dark-mode ::-webkit-scrollbar-thumb,
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #555c69;
+    border-radius: 4px;
+}
+html.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: var(--answer-accent-dark);
+}
+
+body:not(.dark-mode) ::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 4px;
+}
+body:not(.dark-mode) ::-webkit-scrollbar-thumb:hover {
+    background: var(--answer-accent-light);
+}

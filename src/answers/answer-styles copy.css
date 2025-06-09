@@ -1,0 +1,157 @@
+/* answers/answer-styles.css */
+:root {
+    --answer-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    --answer-font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+
+    /* Light Theme for Answer Content */
+    --answer-bg-light: #ffffff;
+    --answer-text-primary-light: #212529;
+    --answer-text-secondary-light: #495057;
+    --answer-accent-light: #007bff;
+    --answer-border-light: #dee2e6;
+    --answer-pre-bg-light: #f8f9fa; /* Lighter pre background */
+    --answer-pre-text-light: #212529;
+    --answer-pre-border-light: #e9ecef; /* Subtle border for pre */
+
+    /* Dark Theme for Answer Content */
+    --answer-bg-dark: #282c34; /* Slightly different base for contrast if needed */
+    --answer-text-primary-dark: #e1e1e1;
+    --answer-text-secondary-dark: #adb5bd;
+    --answer-accent-dark: #61dafb;
+    --answer-border-dark: #3a4048;
+    --answer-pre-bg-dark: #20232a; /* Darker pre background */
+    --answer-pre-text-dark: #c8c8c8; /* Ensure pre text is readable */
+    --answer-pre-border-dark: #32363e; /* Subtle border for pre in dark */
+}
+
+/* Basic reset and body styles */
+body {
+    font-family: var(--answer-font-sans);
+    line-height: 1.6;
+    padding: 20px 25px; /* Consistent padding */
+    margin: 0;
+    background-color: var(--answer-bg-light);
+    color: var(--answer-text-primary-light);
+    transition: background-color 0.3s ease, color 0.3s ease;
+    box-sizing: border-box; /* Include padding in width/height */
+    height: 100%; /* Allow content to fill iframe if needed */
+    overflow-y: auto; /* Enable scrolling within the answer content */
+}
+
+html.dark-mode body, /* If .dark-mode is on html tag of iframe */
+body.dark-mode       /* If .dark-mode is on body tag of iframe (documentElement is preferred) */
+{
+    background-color: var(--answer-bg-dark);
+    color: var(--answer-text-primary-dark);
+}
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--answer-text-primary-light);
+    border-bottom: 1px solid var(--answer-border-light);
+    padding-bottom: 10px;
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+}
+h1:first-child, h2:first-child, h3:first-child {
+    margin-top: 0; /* No top margin for the very first heading */
+}
+h1 { font-size: 1.8em; }
+h2 { font-size: 1.5em; }
+h3 { font-size: 1.3em; }
+
+html.dark-mode h1, html.dark-mode h2, html.dark-mode h3, html.dark-mode h4, html.dark-mode h5, html.dark-mode h6,
+body.dark-mode h1, body.dark-mode h2, body.dark-mode h3, body.dark-mode h4, body.dark-mode h5, body.dark-mode h6 {
+    color: var(--answer-text-primary-dark);
+    border-bottom-color: var(--answer-border-dark);
+}
+
+/* Paragraphs */
+p {
+    margin-bottom: 1em;
+    color: var(--answer-text-secondary-light);
+}
+html.dark-mode p,
+body.dark-mode p {
+    color: var(--answer-text-secondary-dark);
+}
+
+/* Links */
+a {
+    color: var(--answer-accent-light);
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}
+html.dark-mode a,
+body.dark-mode a {
+    color: var(--answer-accent-dark);
+}
+
+/* Preformatted text and Code */
+pre {
+    background-color: var(--answer-pre-bg-light);
+    color: var(--answer-pre-text-light);
+    padding: 15px;
+    border-radius: 6px;
+    overflow-x: auto;
+    border: 1px solid var(--answer-pre-border-light);
+    margin-bottom: 1em;
+    font-size: 0.9em; /* Slightly smaller pre text */
+}
+code {
+    font-family: var(--answer-font-mono);
+    background-color: transparent; /* Make inline code background transparent by default */
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+pre code {
+    font-size: 1em; /* Reset for code inside pre */
+    background-color: transparent; /* No background for code inside pre */
+    padding: 0;
+    border-radius: 0;
+}
+
+html.dark-mode pre,
+body.dark-mode pre {
+    background-color: var(--answer-pre-bg-dark);
+    color: var(--answer-pre-text-dark);
+    border-color: var(--answer-pre-border-dark);
+}
+/* For inline code, if you want it to have a subtle background */
+html.dark-mode code:not(pre code),
+body.dark-mode code:not(pre code) {
+    background-color: var(--answer-pre-border-dark); /* Example, adjust as needed */
+    color: var(--answer-text-primary-dark);
+}
+
+
+/* Optional: Scrollbar styling for the iframe content itself if needed */
+html.dark-mode ::-webkit-scrollbar,
+body.dark-mode ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+html.dark-mode ::-webkit-scrollbar-track,
+body.dark-mode ::-webkit-scrollbar-track {
+    background: transparent; /* Or var(--answer-bg-dark) if you prefer */
+}
+html.dark-mode ::-webkit-scrollbar-thumb,
+body.dark-mode ::-webkit-scrollbar-thumb {
+    background: #555c69; /* Slightly lighter than main dark scrollbar thumb */
+    border-radius: 4px;
+}
+html.dark-mode ::-webkit-scrollbar-thumb:hover,
+body.dark-mode ::-webkit-scrollbar-thumb:hover {
+    background: var(--answer-accent-dark);
+}
+
+/* Light mode scrollbars for iframe if you want them different from main page */
+body:not(.dark-mode) ::-webkit-scrollbar-thumb {
+    background: #d1d5db; /* Slightly different light scrollbar thumb */
+    border-radius: 4px;
+}
+body:not(.dark-mode) ::-webkit-scrollbar-thumb:hover {
+    background: var(--answer-accent-light);
+}

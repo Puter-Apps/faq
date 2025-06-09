@@ -1,0 +1,214 @@
+<!-- q: How can I auto-resize my app window based on content? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Auto-Resizing App Window to Content</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, .tutorial-section > pre.code-example[class*="language-"], .tutorial-section > ul { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area textarea {
+            width: calc(100% - 22px);
+            min-height: 100px;
+            padding: 10px; margin-bottom: 10px;
+            border: 1px solid #b0bac3;
+            border-radius: 5px;
+            font-family: var(--answer-font-sans);
+            font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            resize: vertical;
+        }
+        html.dark-mode .try-it-area textarea {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 40px; white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; }
+        html.dark-mode .output { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+        
+        #resizable-content-div { /* For the demo content area */
+            min-height: 50px;
+            padding: 15px;
+            border: 2px dashed var(--answer-accent-light);
+            background-color: var(--answer-bg-light);
+            margin-bottom: 15px;
+            overflow: auto; /* Important for scrollWidth/Height to be accurate */
+            resize: both; /* Allow user to resize it too for testing */
+        }
+        html.dark-mode #resizable-content-div {
+             border-color: var(--answer-accent-dark);
+             background-color: var(--answer-bg-dark);
+        }
+        .info-box { background-color: var(--answer-pre-bg-light); border-left: 4px solid var(--answer-accent-light); padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;}
+        html.dark-mode .info-box { background-color: var(--answer-pre-bg-dark); border-left-color: var(--answer-accent-dark); }
+    </style>
+</head>
+<body>
+    <h1>How can I auto-resize my app window based on content?</h1>
+    <p>Puter applications often run in windows managed by the Puter environment. You can programmatically adjust the size of your app's window using <code>puter.ui.setWindowSize(width, height)</code>. To make this "auto-resizing" based on content, your app needs to determine the ideal dimensions required by its current content and then call this API.</p>
+    <p>This is particularly useful for apps with dynamic content, such as text editors that expand as you type, or information panels that show varying amounts of data.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Determining Content Dimensions</h2>
+        <p>The key is to measure how much space your app's content actually needs. Common JavaScript DOM properties for this include:</p>
+        <ul>
+            <li><strong><code>element.scrollHeight</code>:</strong> The entire height of an element's content, including content not visible due to overflow (i.e., what you'd need to scroll to see).</li>
+            <li><strong><code>element.scrollWidth</code>:</strong> The entire width of an element's content.</li>
+            <li><strong><code>element.offsetHeight</code> / <code>element.offsetWidth</code>:</strong> The height/width of an element including padding, borders, and scrollbars (if visible).</li>
+            <li><strong><code>document.body.scrollHeight</code> / <code>document.body.scrollWidth</code>:</strong> Can often give you the dimensions needed for the entire page content.</li>
+        </ul>
+        <p>You'll typically want to measure a specific container element that holds your main dynamic content. It's also important to consider:</p>
+        <ul>
+            <li>**Window Decorations:** The actual Puter window will have its own title bar, borders, etc. The dimensions you pass to <code>setWindowSize</code> are for the *inner content area* of the window. You might need to add some padding or buffer to your calculated content size to account for these and any margins/padding within your app's body.</li>
+            <li>**Minimum/Maximum Sizes:** Puter windows have minimum dimensions (e.g., 200x200px). <code>setWindowSize</code> will respect these. You might also want to impose your own maximum reasonable size to prevent the window from becoming excessively large.</li>
+        </ul>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Using <code>puter.ui.setWindowSize()</code></h2>
+        <p>Once you've calculated your desired <code>newWidth</code> and <code>newHeight</code>:</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Example: Resize window to fit the entire document body's scroll height/width
+// Add some padding for window chrome and internal app margins.
+const PADDING_BUFFER = 50; // Adjust this based on your app's layout and typical window chrome
+
+function resizeWindowToBodyContent() {
+    const requiredWidth = document.body.scrollWidth + PADDING_BUFFER;
+    const requiredHeight = document.body.scrollHeight + PADDING_BUFFER;
+
+    // Apply Puter's minimums (or your own, if larger)
+    const finalWidth = Math.max(200, requiredWidth);
+    const finalHeight = Math.max(200, requiredHeight);
+    
+    // Optionally, cap at a maximum size
+    // const maxWidth = window.screen.availWidth * 0.8;
+    // const maxHeight = window.screen.availHeight * 0.8;
+    // finalWidth = Math.min(finalWidth, maxWidth);
+    // finalHeight = Math.min(finalHeight, maxHeight);
+
+    try {
+        puter.ui.setWindowSize(finalWidth, finalHeight);
+        console.log(`Window resized to: ${finalWidth}x${finalHeight}`);
+        return `Window resized to: ${Math.round(finalWidth)}x${Math.round(finalHeight)}`;
+    } catch (error) {
+        console.error("Error resizing window:", error);
+        return `Error resizing window: ${error.message}`;
+    }
+}
+        </code></pre>
+        <div class="info-box">
+            <strong>When to Resize:</strong> Avoid resizing too frequently (e.g., on every keystroke in a textarea), as this can be jarring. Good times to auto-resize might be:
+            <ul>
+                <li>After a significant content load or change.</li>
+                <li>In response to a specific user action (e.g., "Expand to Fit").</li>
+                <li>Using a debounced function if reacting to continuous input like typing.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself: Auto-Resize to Content</h2>
+        <div class="try-it-area">
+            <h3>Dynamic Content Area</h3>
+            <p>Add or remove text in the area below. The "Resizable Content Div" itself can also be manually resized with your mouse (if your browser supports <code>resize: both</code> CSS) to simulate different content sizes.</p>
+            <div id="resizable-content-div" contenteditable="true" spellcheck="false">
+                Start typing here, or paste some text...<br><br>
+                The more content you add, the larger this div will need to be.
+                Puter.js allows you to resize the application window to accommodate such dynamic content.
+            </div>
+            <button id="add-content-btn">Add More Text</button>
+            <button id="resize-window-btn">Auto-Resize Window to Fit Div</button>
+            <div class="output" id="resize-status-output">Resize status will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        const resizableDiv = document.getElementById('resizable-content-div');
+        const addContentBtn = document.getElementById('add-content-btn');
+        const resizeWindowBtn = document.getElementById('resize-window-btn');
+        const resizeStatusOutput = document.getElementById('resize-status-output');
+
+        // Helper to display messages
+        function displayResizeStatus(message, isError = false) {
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            resizeStatusOutput.textContent = message;
+            if (isError) {
+                resizeStatusOutput.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                resizeStatusOutput.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        addContentBtn.addEventListener('click', () => {
+            const moreText = document.createElement('p');
+            moreText.textContent = "Adding another paragraph of text to make the content taller and wider. " + new Date().toLocaleTimeString();
+            resizableDiv.appendChild(moreText);
+            displayResizeStatus("Added more content. Click 'Auto-Resize' to see the effect.");
+        });
+
+        resizeWindowBtn.addEventListener('click', () => {
+            displayResizeStatus("Calculating content size and resizing window...");
+
+            // Use the resizableDiv's scroll dimensions
+            const contentWidth = resizableDiv.scrollWidth;
+            const contentHeight = resizableDiv.scrollHeight;
+
+            // Add a buffer for window chrome, padding within your app's body, etc.
+            // This buffer might need adjustment based on your app's specific layout.
+            const PADDING_X_BUFFER = 60; // Horizontal buffer (e.g., 30px each side for body padding + window chrome)
+            const PADDING_Y_BUFFER = 80; // Vertical buffer (e.g., for title bar, body padding, etc.)
+
+            let targetWidth = contentWidth + PADDING_X_BUFFER;
+            let targetHeight = contentHeight + PADDING_Y_BUFFER;
+
+            // Ensure minimum dimensions (Puter's default is 200x200)
+            targetWidth = Math.max(200, targetWidth);
+            targetHeight = Math.max(200, targetHeight);
+
+            // Optional: Cap maximum dimensions (e.g., 80% of available screen space)
+            // targetWidth = Math.min(targetWidth, window.screen.availWidth * 0.8);
+            // targetHeight = Math.min(targetHeight, window.screen.availHeight * 0.8);
+            
+            console.log(`Calculated content: ${contentWidth}x${contentHeight}, Target window: ${targetWidth}x${targetHeight}`);
+
+            try {
+                // Note: puter.ui.setWindowSize might not be fully functional in a simple iframe
+                // context like this FAQ answer page. It's designed for apps running in Puter.
+                if (typeof puter.ui.setWindowSize === 'function') {
+                    puter.ui.setWindowSize(targetWidth, targetHeight);
+                    displayResizeStatus(`Attempted to resize window to: ${Math.round(targetWidth)}px width, ${Math.round(targetHeight)}px height. Check your app window!`);
+                } else {
+                    displayResizeStatus("`puter.ui.setWindowSize` is not available in this demo environment. In a Puter app, it would resize.", true);
+                }
+            } catch (error) {
+                displayResizeStatus(`Error resizing window: ${error.message || error}`, true);
+                console.error("Window resize error:", error);
+            }
+        });
+
+        // Initial status
+        displayResizeStatus("Add content or resize the div, then click 'Auto-Resize'.");
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

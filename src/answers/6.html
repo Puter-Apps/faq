@@ -1,0 +1,467 @@
+<!-- q: What is function calling in puter.ai.chat and how do I use it? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Function Calling with puter.ai.chat</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ol, /* Added ol styling */
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 5px;
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px; /* Increased min-height */
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .info-box { /* For notes and important info */
+            background-color: var(--answer-pre-bg-light);
+            border-left: 4px solid var(--answer-accent-light);
+            padding: 15px; margin-top: 20px; margin-bottom: 20px; border-radius: 0 4px 4px 0;
+        }
+        html.dark-mode .info-box {
+            background-color: var(--answer-pre-bg-dark);
+            border-left-color: var(--answer-accent-dark);
+        }
+    </style>
+</head>
+<body>
+    <h1>What is function calling in <code>puter.ai.chat</code> and how do I use it?</h1>
+    <p>Function calling is a powerful feature in <code>puter.ai.chat</code> that allows Large Language Models (LLMs) like GPT to do more than just generate text. You can define custom functions that your application knows how to execute, and the AI can intelligently decide to "call" these functions by outputting a structured JSON object with the function's name and the arguments it thinks are needed to fulfill your request.</p>
+    <p>Your application code then intercepts this, executes the actual function (e.g., to fetch real-time data, interact with a database, or call an external API), and can then send the result of that function back to the AI. The AI can then use this result to provide a more informed and contextually relevant final answer to the user. This essentially gives the AI access to tools and real-world information.</p>
+
+    <div class="tutorial-section">
+        <h2>1. The Function Calling Flow</h2>
+        <p>The process typically involves these steps:</p>
+        <ol>
+            <li><strong>Define Tools:</strong> When you make a call to <code>puter.ai.chat</code>, you provide a list of available functions (called <code>tools</code>). Each tool definition includes its <code>name</code>, a <code>description</code> (to help the AI understand what it does), and a <code>parameters</code> schema (defining the arguments the function expects, often using JSON Schema).</li>
+            <li><strong>AI Decides to Call a Function:</strong> Based on your prompt and the descriptions of the available tools, the AI might decide that calling one of your functions is the best way to respond. If so, instead of a direct text answer, the <code>response.message</code> from <code>puter.ai.chat</code> will contain a <code>tool_calls</code> array. Each object in this array represents a function the AI wants to call.</li>
+            <li><strong>Execute the Function in Your Code:</strong> Your application code needs to check for <code>tool_calls</code>. If present, you parse the function name and arguments from the <code>tool_calls</code> object. Then, you execute your actual JavaScript function with these arguments.</li>
+            <li><strong>Return Results to AI (Crucial Step):</strong> After your function executes, you send its return value back to the AI. This is done by making another call to <code>puter.ai.chat</code>. This new call must include:
+                <ul>
+                    <li>The original message history (including your initial prompt and the AI's message that contained the <code>tool_calls</code>).</li>
+                    <li>A new message with <code>role: "tool"</code>. This "tool" message must include the <code>tool_call_id</code> (from the AI's previous response) and the <code>content</code> (which is the stringified result of your function execution).</li>
+                </ul>
+            </li>
+            <li><strong>AI Generates Final Response:</strong> The AI processes the function's result (that you provided in the "tool" message) and uses it to generate a final, user-facing natural language response.</li>
+        </ol>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example: A Simple Weather Bot</h2>
+        <p>Let's create a bot that can "fetch" mock weather data using function calling.</p>
+
+        <h3>Step 2a: Define the Tool and Implement the Function</h3>
+        <p>First, we define how the AI sees our weather function (the "tool") and then we write the actual JavaScript function.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Define the tool for the AI
+const weatherTool = [{
+    type: "function",
+    function: {
+        name: "get_current_weather",
+        description: "Get the current weather in a given location. Use Fahrenheit as default unless Celsius is specified.",
+        parameters: {
+            type: "object",
+            properties: {
+                location: {
+                    type: "string",
+                    description: "The city and state, e.g., San Francisco, CA or London, UK",
+                },
+                unit: { 
+                    type: "string", 
+                    enum: ["celsius", "fahrenheit"],
+                    description: "The temperature unit, either celsius or fahrenheit."
+                },
+            },
+            required: ["location"], // Location is mandatory
+        },
+        strict: true // Enforce strict parameter validation by the AI
+    }
+}];
+
+// Implement the actual JavaScript function
+// In a real app, this would call a weather API. We'll mock it.
+function getCurrentWeather(location, unit = "fahrenheit") {
+    console.log(`JS function getCurrentWeather called with: ${location}, Unit: ${unit}`);
+    let temperature, forecast;
+    if (location.toLowerCase().includes("tokyo")) {
+        temperature = unit === "celsius" ? "15°C" : "59°F";
+        forecast = "Cloudy with a chance of rain.";
+    } else if (location.toLowerCase().includes("paris")) {
+        temperature = unit === "celsius" ? "22°C" : "72°F";
+        forecast = "Sunny and pleasant.";
+    } else if (location.toLowerCase().includes("london")) {
+        temperature = unit === "celsius" ? "18°C" : "64°F";
+        forecast = "Overcast with light drizzle.";
+    } else {
+        temperature = "unknown";
+        forecast = "Weather data not available for this location.";
+    }
+    // The function result MUST be a string when sent back to the AI in the "tool" role message.
+    return JSON.stringify({ 
+        location: location, 
+        temperature: temperature, 
+        unit: unit, 
+        forecast: forecast 
+    });
+}
+        </code></pre>
+
+        <h3>Step 2b: The Main AI Interaction Logic</h3>
+        <p>This function handles the multi-turn conversation with the AI.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function askAIWithWeatherFunction(promptText, outputElementId) {
+    const outputDiv = document.getElementById(outputElementId);
+    let currentLog = "Initializing...\n";
+    displayOutput(outputElementId, currentLog);
+
+    // Start with the user's prompt
+    const messages = [{ role: "user", content: promptText }];
+
+    try {
+        currentLog += "Sending prompt to AI with tools defined...\n";
+        displayOutput(outputElementId, currentLog);
+
+        // First call to the AI, providing the tools
+        let aiResponse = await puter.ai.chat(messages, { tools: weatherTool });
+        
+        currentLog += "AI's first response received.\n";
+        // currentLog += `Raw AI response: ${JSON.stringify(aiResponse, null, 2)}\n\n`;
+        displayOutput(outputElementId, currentLog);
+
+        // Add the AI's response to our message history
+        messages.push(aiResponse.message);
+
+        // Check if the AI decided to call a function
+        if (aiResponse.message.tool_calls && aiResponse.message.tool_calls.length > 0) {
+            currentLog += "AI wants to call a function!\n";
+            // For simplicity, we'll process the first tool call if multiple are returned
+            const toolCall = aiResponse.message.tool_calls[0]; 
+            
+            if (toolCall.function.name === "get_current_weather") {
+                currentLog += `AI identified function: ${toolCall.function.name}\n`;
+                // Parse the arguments the AI wants to use for our function
+                const args = JSON.parse(toolCall.function.arguments);
+                currentLog += `AI provided arguments: ${JSON.stringify(args)}\n`;
+                displayOutput(outputElementId, currentLog);
+
+                // Execute our actual JavaScript function
+                currentLog += `Calling local JS function: getCurrentWeather("${args.location}", "${args.unit || 'fahrenheit'}")\n`;
+                displayOutput(outputElementId, currentLog);
+                const functionResultString = getCurrentWeather(args.location, args.unit);
+                currentLog += `Local JS function result: ${functionResultString}\n\n`;
+                displayOutput(outputElementId, currentLog);
+
+                // Add the tool's result to the message history
+                messages.push({
+                    tool_call_id: toolCall.id, // Essential to link the result to the call
+                    role: "tool",
+                    name: toolCall.function.name, // The name of the function that was called
+                    content: functionResultString, // The stringified result from our function
+                });
+
+                currentLog += "Sending function result back to AI for final answer...\n";
+                displayOutput(outputElementId, currentLog);
+                
+                // Call the AI again with the updated message history (including the tool result)
+                // It's good practice to provide the tools again in case the AI needs to make another call,
+                // or if there's a chain of function calls.
+                const finalAiResponse = await puter.ai.chat(messages, { tools: weatherTool });
+                
+                currentLog += "AI's final response after processing function result:\n";
+                currentLog += `${finalAiResponse.message.content}`;
+                displayOutput(outputElementId, currentLog);
+
+            } else {
+                currentLog += `AI wanted to call an unknown function: ${toolCall.function.name}\n`;
+                displayOutput(outputElementId, currentLog);
+            }
+        } else {
+            // The AI responded directly without needing a function call
+            currentLog += "AI responded directly (no function call needed):\n";
+            currentLog += `${aiResponse.message.content}`;
+            displayOutput(outputElementId, currentLog);
+        }
+    } catch (error) {
+        console.error("Function calling demonstration error:", error);
+        currentLog += `\n--- ERROR ---\n${error.message || error}`;
+        displayOutput(outputElementId, currentLog, true);
+    }
+}
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Ask About Weather</h3>
+            <label for="weather-prompt">Your Question (e.g., "What's the weather in Paris?", "Is it cold in Tokyo, Japan?", "Weather for London in Celsius"):</label>
+            <input type="text" id="weather-prompt" value="What's the weather like in Paris?">
+            
+            <button id="ask-weather-btn">Ask AI About Weather</button>
+            <div class="output" id="weather-output">AI interaction log will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Key Considerations</h2>
+        <div class="info-box">
+            <p><strong>Tool Descriptions are Crucial:</strong> The AI relies heavily on the <code>description</code> field for both the tool itself and its parameters to understand when and how to use your function. Make them clear and descriptive.</p>
+        </div>
+        <ul>
+            <li><strong>Parameter Schema:</strong> Use JSON Schema to define the <code>parameters</code>. This helps the AI generate correctly structured arguments. The <code>strict: true</code> option (if supported by the model/Puter.js for that model) can help enforce this.</li>
+            <li><strong>Function Result as String:</strong> The <code>content</code> of the <code>role: "tool"</code> message (your function's result) must be a string. If your function returns an object or number, <code>JSON.stringify()</code> it.</li>
+            <li><strong>Multiple Tool Calls:</strong> An AI might request multiple function calls in a single response (<code>response.message.tool_calls</code> will be an array). Your code should be prepared to iterate through these and respond to each. For simplicity, the example above only processes the first one.</li>
+            <li><strong>Idempotency:</strong> Design your functions to be idempotent if possible, meaning calling them multiple times with the same arguments produces the same result without unintended side effects.</li>
+            <li><strong>Error Handling:</strong> Implement robust error handling both for the AI calls and within your actual functions. If your function fails, you can still send a "tool" message back to the AI with an error string as its content, so the AI can inform the user.</li>
+            <li><strong>Cost and Latency:</strong> Each call to <code>puter.ai.chat</code> (including the ones to submit tool results) is a separate API request and may incur costs (covered by the user's Puter account) and add latency.</li>
+        </ul>
+        <p>Function calling dramatically extends the capabilities of LLMs, turning them into intelligent agents that can interact with the digital world on the user's behalf.</p>
+    </div>
+
+    <script>
+        // Helper to display messages (from previous examples, slightly adapted for verbosity)
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            // For function calling, we often want to see the full message string
+            el.textContent = message; 
+            
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff8b8b' : '#c04141'; // More prominent error color
+            } else {
+                // For normal log messages, use a slightly dimmer color than main text
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#455a64';
+            }
+        }
+
+        // --- Tool Definition and Function Implementation (copied from pre block for execution) ---
+        const weatherTool = [{
+            type: "function",
+            function: {
+                name: "get_current_weather",
+                description: "Get the current weather in a given location. Use Fahrenheit as default unless Celsius is specified.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        location: {
+                            type: "string",
+                            description: "The city and state, e.g., San Francisco, CA or London, UK",
+                        },
+                        unit: { 
+                            type: "string", 
+                            enum: ["celsius", "fahrenheit"],
+                            description: "The temperature unit, either celsius or fahrenheit."
+                        },
+                    },
+                    required: ["location"],
+                },
+                strict: true
+            }
+        }];
+
+        function getCurrentWeather(location, unit = "fahrenheit") {
+            console.log(`JS function getCurrentWeather called with: ${location}, Unit: ${unit}`);
+            let temperature, forecast;
+            const locLower = location.toLowerCase();
+            if (locLower.includes("tokyo")) {
+                temperature = unit === "celsius" ? "15°C" : "59°F";
+                forecast = "Cloudy with a chance of rain.";
+            } else if (locLower.includes("paris")) {
+                temperature = unit === "celsius" ? "22°C" : "72°F";
+                forecast = "Sunny and pleasant.";
+            } else if (locLower.includes("london")) {
+                temperature = unit === "celsius" ? "18°C" : "64°F";
+                forecast = "Overcast with light drizzle.";
+            } else {
+                temperature = "unknown";
+                forecast = `Weather data not available for "${location}".`;
+            }
+            return JSON.stringify({ 
+                location: location, 
+                temperature: temperature, 
+                unit: unit, 
+                forecast: forecast 
+            });
+        }
+
+        async function askAIWithWeatherFunction(promptText, outputElementId) {
+            const outputDiv = document.getElementById(outputElementId);
+            let currentLog = "Initializing interaction with AI...\n";
+            displayOutput(outputElementId, currentLog);
+
+            const messages = [{ role: "user", content: promptText }];
+
+            try {
+                currentLog += "Sending prompt to AI and declaring available 'weatherTool'...\n";
+                displayOutput(outputElementId, currentLog);
+
+                let aiResponse = await puter.ai.chat(messages, { tools: weatherTool });
+                
+                currentLog += "------------------------------------\n";
+                currentLog += "AI's First Response (raw):\n";
+                currentLog += `${JSON.stringify(aiResponse.message, null, 2)}\n`;
+                currentLog += "------------------------------------\n";
+                displayOutput(outputElementId, currentLog);
+
+                messages.push(aiResponse.message);
+
+                if (aiResponse.message.tool_calls && aiResponse.message.tool_calls.length > 0) {
+                    currentLog += "AI has decided to use a tool.\n";
+                    const toolCall = aiResponse.message.tool_calls[0];
+                    
+                    if (toolCall.function.name === "get_current_weather") {
+                        currentLog += `Tool to call: ${toolCall.function.name}\n`;
+                        const args = JSON.parse(toolCall.function.arguments);
+                        currentLog += `Arguments from AI: ${JSON.stringify(args)}\n`;
+                        displayOutput(outputElementId, currentLog);
+
+                        currentLog += `Executing local function: getCurrentWeather("${args.location}", "${args.unit || 'fahrenheit'}")\n`;
+                        displayOutput(outputElementId, currentLog);
+                        const functionResultString = getCurrentWeather(args.location, args.unit);
+                        currentLog += `Local function returned: ${functionResultString}\n\n`;
+                        displayOutput(outputElementId, currentLog);
+
+                        messages.push({
+                            tool_call_id: toolCall.id,
+                            role: "tool",
+                            name: toolCall.function.name,
+                            content: functionResultString,
+                        });
+
+                        currentLog += "Sending tool execution result back to AI for summarization...\n";
+                        displayOutput(outputElementId, currentLog);
+                        
+                        const finalAiResponse = await puter.ai.chat(messages, { tools: weatherTool });
+                        
+                        currentLog += "------------------------------------\n";
+                        currentLog += "AI's Final Natural Language Response:\n";
+                        currentLog += `${finalAiResponse.message.content}\n`;
+                        currentLog += "------------------------------------\n";
+                        displayOutput(outputElementId, currentLog);
+
+                    } else {
+                        currentLog += `AI requested an unknown tool: ${toolCall.function.name}\n`;
+                        displayOutput(outputElementId, currentLog, true);
+                    }
+                } else {
+                    currentLog += "AI provided a direct response without using a tool:\n";
+                    currentLog += `${aiResponse.message.content}\n`;
+                    displayOutput(outputElementId, currentLog);
+                }
+            } catch (error) {
+                console.error("Function calling demonstration error:", error);
+                currentLog += `\n--- ERROR ENCOUNTERED ---\n${error.message || JSON.stringify(error)}`;
+                displayOutput(outputElementId, currentLog, true);
+            }
+        }
+        // --- End of Tool Definition and Function Implementation ---
+
+        document.getElementById('ask-weather-btn').addEventListener('click', () => {
+            const prompt = document.getElementById('weather-prompt').value;
+            const outputElId = 'weather-output';
+
+            if (!prompt.trim()) {
+                displayOutput(outputElId, 'Error: Please enter a prompt.', true);
+                return;
+            }
+            askAIWithWeatherFunction(prompt, outputElId);
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script> <!-- Added for JSON display in logs -->
+
+</body>
+</html>

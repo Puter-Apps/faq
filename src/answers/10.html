@@ -1,0 +1,307 @@
+<!-- q: How do I stream responses from puter.ai.chat for a more interactive feel? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Streaming AI Chat Responses with puter.ai.chat</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area textarea,
+        .try-it-area select { /* Added select styling */
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area textarea,
+        html.dark-mode .try-it-area select, /* Added select styling for dark mode */
+        body.dark-mode .try-it-area textarea,
+        body.dark-mode .try-it-area select { /* Added select styling for dark mode */
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area textarea { min-height: 80px; resize: vertical; }
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px;
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 100px; /* Increased min-height */
+            white-space: pre-wrap; word-break: break-word; /* break-word for long non-spaced text */
+            font-size: 0.95em; line-height: 1.6; /* Slightly larger font for readability */
+            background-color: var(--answer-bg-light); /* Use main bg for output area */
+            color: var(--answer-text-primary-light);
+            border: 1px solid var(--answer-border-light);
+            overflow-y: auto; /* Add scroll if content overflows */
+            max-height: 400px; /* Optional: limit max height */
+        }
+        html.dark-mode .output {
+            background-color: var(--answer-bg-dark);
+            color: var(--answer-text-primary-dark);
+            border-color: var(--answer-border-dark);
+        }
+        .thinking-indicator {
+            font-style: italic;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <h1>How do I stream responses from <code>puter.ai.chat</code> for a more interactive feel?</h1>
+    <p>Streaming AI responses allows your application to display text chunks from the language model as they are generated, rather than waiting for the entire response to complete. This creates a much more dynamic and engaging user experience, similar to how you see text appear in popular AI chat interfaces.</p>
+    <p>To enable this in Puter.js, you set the <code>stream: true</code> option within the <code>options</code> object when calling <code>puter.ai.chat()</code>.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Understanding Streamed Responses</h2>
+        <p>When you use <code>stream: true</code>, <code>puter.ai.chat()</code> doesn't return a single Promise that resolves to the full response. Instead, it returns an <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Iteration_protocols#The_async_iterator_and_async_iterable_protocols" target="_blank" rel="noopener noreferrer">async iterable object</a>.</p>
+        <p>You can iterate over this object using a <code>for await...of</code> loop. Each iteration yields a "part" or "chunk" of the response as it becomes available from the AI model.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function getStreamingResponse(prompt) {
+    const stream = await puter.ai.chat(prompt, { stream: true });
+    let fullText = "";
+
+    for await (const part of stream) {
+        // 'part' is an object. The actual text chunk is usually in 'part.text'.
+        if (part && part.text) {
+            fullText += part.text;
+            // Update your UI here with the new part.text or the fullText
+            console.log("Received chunk:", part.text); 
+        }
+        // 'part' might also contain other info, e.g., part.tool_calls if function calling is used.
+    }
+    console.log("Streaming complete. Full response:", fullText);
+    return fullText;
+}
+        </code></pre>
+        <p>It's your application's responsibility to accumulate these text chunks and display them to the user in real-time.</p>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example: Streaming a Story</h2>
+        <p>Let's ask the AI to tell a short story and display it as it's being written.</p>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Stream AI Story</h3>
+            <label for="stream-prompt">Enter your prompt for the AI:</label>
+            <textarea id="stream-prompt">Tell me a very short, imaginative story about a brave little star who wanted to explore a black hole.</textarea>
+            
+            <label for="stream-model-select">Choose Model (some models might stream differently):</label>
+            <select id="stream-model-select">
+                <option value="gpt-4o-mini">gpt-4o-mini (Default)</option>
+                <option value="claude-3-5-sonnet">claude-3-5-sonnet</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                <option value="gpt-4o">gpt-4o</option>
+            </select>
+
+            <button id="start-stream-btn">Start Streaming Response</button>
+            <div class="output" id="stream-chat-output">AI's streamed story will appear here, word by word (or chunk by chunk)...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Handling Stream Parts</h2>
+        <p>Each <code>part</code> yielded by the async iterator is an object. The most common property you'll use is <code>part.text</code>, which contains the new piece of text from the AI.</p>
+        <p>However, a <code>part</code> object can also signal other events or data:</p>
+        <ul>
+            <li><strong>Text Chunks:</strong> <code>{ text: "new words..." }</code> - This is the primary content.</li>
+            <li><strong>Tool Calls (if using function calling with streaming):</strong> <code>{ tool_calls: [...] }</code> - If the AI decides to call a function, a part will indicate this. The streaming might pause or interleave tool call information with text.</li>
+            <li><strong>Other Metadata:</strong> Depending on the model and backend, parts might occasionally contain other metadata or event types (e.g., start/end of stream signals, though often implicit). Always check for the existence of <code>part.text</code> before trying to append it.</li>
+        </ul>
+        <p>When updating your UI, it's generally best to append <code>part.text</code> to a running string and then update the entire content of your display element. This is often simpler than trying to append directly to the DOM in rapid succession, which can sometimes have performance implications or cause flickering.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Inside the for await...of loop:
+let accumulatedResponse = ""; // Initialize before the loop
+const displayElement = document.getElementById('myChatDisplay');
+
+// ... loop starts ...
+if (part?.text) {
+    accumulatedResponse += part.text;
+    displayElement.textContent = accumulatedResponse; // Update UI
+    
+    // Optional: Auto-scroll to keep the latest text in view
+    displayElement.scrollTop = displayElement.scrollHeight;
+}
+// ... handle other part types like tool_calls ...
+        </code></pre>
+        <p>Streaming provides a significantly more responsive and interactive experience, especially for tasks that involve generating longer pieces of text.</p>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false, append = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            
+            if (append) {
+                // For appending, we assume 'message' is a text chunk
+                // We remove the "thinking" indicator if it's present as the only child
+                if (el.childNodes.length === 1 && el.firstChild.nodeType === Node.TEXT_NODE && el.firstChild.textContent.includes('AI is thinking...')) {
+                    el.textContent = message;
+                } else {
+                    el.textContent += message;
+                }
+            } else if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                // Let the .output class and its dark mode variant handle normal text color
+                 el.style.color = ''; // Reset to default inherited color
+            }
+        }
+
+        async function initiateStreamingChat() {
+            const promptText = document.getElementById('stream-prompt').value;
+            const selectedModel = document.getElementById('stream-model-select').value;
+            const outputElId = 'stream-chat-output';
+            const outputDiv = document.getElementById(outputElId);
+
+            if (!promptText.trim()) {
+                displayOutput(outputElId, 'Error: Please enter a prompt.', true);
+                return;
+            }
+
+            // Clear previous output and show thinking indicator
+            outputDiv.innerHTML = '<span class="thinking-indicator">AI is thinking...</span>';
+            outputDiv.scrollTop = 0; // Scroll to top for new response
+
+            let accumulatedText = ""; // To build the full response
+
+            try {
+                const stream = await puter.ai.chat(promptText, { 
+                    model: selectedModel, 
+                    stream: true 
+                });
+                
+                let firstChunk = true;
+                for await (const part of stream) {
+                    if (firstChunk) {
+                        // Clear "AI is thinking..." on the very first actual data part
+                        outputDiv.innerHTML = ''; 
+                        firstChunk = false;
+                    }
+
+                    if (part?.text) {
+                        accumulatedText += part.text;
+                        // Display the accumulated text. Using textContent is safer.
+                        outputDiv.textContent = accumulatedText;
+                    } else if (part?.tool_calls) {
+                        // If you implement function calling with streaming, handle it here.
+                        // For this demo, we'll just log it.
+                        const toolCallInfo = "\n[AI Requesting Tool Call: " + JSON.stringify(part.tool_calls) + "]\n";
+                        accumulatedText += toolCallInfo;
+                        outputDiv.textContent = accumulatedText;
+                        console.warn("Tool call requested during stream:", part.tool_calls);
+                    } else if (part?.error) { // Some streaming APIs might send error objects within the stream
+                        console.error("Error object in stream:", part.error);
+                        accumulatedText += `\n[Stream Error: ${part.error.message || JSON.stringify(part.error)}]\n`;
+                        outputDiv.textContent = accumulatedText;
+                        // Optionally break the loop or handle differently
+                    }
+                    // Auto-scroll to the bottom of the output div
+                    outputDiv.scrollTop = outputDiv.scrollHeight;
+                }
+                console.log("Streaming finished. Full accumulated response:", accumulatedText);
+                if (firstChunk && accumulatedText === "") { // No data parts received
+                    displayOutput(outputElId, "Stream ended without any text content.", false);
+                }
+
+            } catch (error) {
+                console.error('Error initiating or during streaming:', error);
+                // Display error, possibly appending to existing text if some was received
+                let errorMsg = `Error: ${error.message || JSON.stringify(error)}`;
+                if (accumulatedText) { // If some text was already streamed
+                     outputDiv.textContent = accumulatedText + "\n\n--- STREAMING ERROR ---\n" + errorMsg;
+                } else {
+                    displayOutput(outputElId, errorMsg, true);
+                }
+            }
+        }
+
+        document.getElementById('start-stream-btn').addEventListener('click', initiateStreamingChat);
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

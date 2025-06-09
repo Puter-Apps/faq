@@ -1,0 +1,322 @@
+<!-- q: How can I create a simple image gallery that reads from a Puter directory? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Image Gallery from Puter FS</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, .tutorial-section > pre.code-example[class*="language-"], .tutorial-section > ul { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output, #image-gallery-container { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 50px; white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; }
+        html.dark-mode .output, html.dark-mode #image-gallery-container { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+        
+        #image-gallery-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            background-color: var(--answer-bg-light); /* Match body background */
+            border: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode #image-gallery-container {
+            background-color: var(--answer-bg-dark);
+            border-color: var(--answer-border-dark);
+        }
+        .gallery-image-wrapper {
+            border: 1px solid var(--answer-border-light);
+            border-radius: 4px;
+            padding: 5px;
+            background-color: var(--answer-bg-light);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        html.dark-mode .gallery-image-wrapper {
+            border-color: var(--answer-border-dark);
+            background-color: var(--answer-pre-bg-dark); /* Slightly different bg for image card */
+        }
+        .gallery-image-wrapper img {
+            display: block;
+            max-width: 150px; /* Adjust as needed */
+            max-height: 150px; /* Adjust as needed */
+            width: auto;
+            height: auto;
+            border-radius: 3px;
+        }
+        .gallery-image-wrapper p {
+            font-size: 0.8em;
+            text-align: center;
+            margin-top: 5px;
+            margin-bottom: 0;
+            word-break: break-all;
+            color: var(--answer-text-secondary-light);
+        }
+         html.dark-mode .gallery-image-wrapper p {
+            color: var(--answer-text-secondary-dark);
+        }
+         #current-dir-path {
+            font-style: italic;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode #current-dir-path {
+            color: var(--answer-text-secondary-dark);
+        }
+    </style>
+</head>
+<body>
+    <h1>How can I create a simple image gallery that reads from a Puter directory?</h1>
+    <p>You can create an image gallery by listing files in a user-selected Puter FS directory, filtering for image files, and then displaying them. This involves using <code>puter.ui.showDirectoryPicker()</code> to let the user choose a directory, <code>puter.fs.readdir()</code> to list its contents, and then client-side logic to handle and display images.</p>
+    <p>For displaying images, we'll fetch each image file as a Blob using <code>puter.fs.read()</code> and then create an <a href="https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL" target="_blank" rel="noopener noreferrer">Object URL</a> to use as the <code>src</code> for an <code><img></code> tag. This is a common client-side method for displaying file data.</p>
+
+    <div class="tutorial-section">
+        <h2>1. The Process</h2>
+        <ol>
+            <li><strong>Select Directory:</strong> Use <code>puter.ui.showDirectoryPicker()</code> to allow the user to select a directory from their Puter FS. This returns an <code>FSItem</code> object representing the directory.</li>
+            <li><strong>List Directory Contents:</strong> Call <code>selectedDirectory.readdir()</code> (or <code>puter.fs.readdir(selectedDirectory.path)</code>). This returns a Promise resolving to an array of <code>FSItem</code> objects for files and subdirectories.</li>
+            <li><strong>Filter for Images:</strong> Iterate through the array of <code>FSItem</code>s. Check if each item is a file (<code>!item.is_dir</code>) and if its name has a common image file extension (e.g., <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.gif</code>, <code>.webp</code>, <code>.svg</code>).</li>
+            <li><strong>Display Images:</strong> For each identified image file:
+                <ul>
+                    <li>Use <code>item.read()</code> (or <code>puter.fs.read(item.path)</code>) to get a <code>Blob</code> of the image data.</li>
+                    <li>Create an Object URL from the Blob: <code>URL.createObjectURL(blob)</code>.</li>
+                    <li>Create an <code><img></code> element and set its <code>src</code> attribute to this Object URL.</li>
+                    <li>Append the image to your gallery container.</li>
+                    <li>**Important:** Remember to revoke Object URLs using <code>URL.revokeObjectURL(objectUrl)</code> when they are no longer needed (e.g., when the image is removed from the gallery or the page unloads) to free up memory.</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example Code Structure</h2>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Assume galleryContainer is a reference to a div element in your HTML
+// e.g., const galleryContainer = document.getElementById('image-gallery-container');
+// Assume currentDirectoryPathDiv is for displaying the path
+// e.g., const currentDirectoryPathDiv = document.getElementById('current-dir-path');
+
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+let currentObjectUrls = []; // To keep track for revocation
+
+function cleanupPreviousImages() {
+    currentObjectUrls.forEach(url => URL.revokeObjectURL(url));
+    currentObjectUrls = [];
+    galleryContainer.innerHTML = ''; // Clear previous images
+}
+
+async function loadImageGallery(directoryItem) {
+    cleanupPreviousImages();
+    currentDirectoryPathDiv.textContent = `Displaying images from: ${directoryItem.path}`;
+    galleryContainer.innerHTML = '<p>Loading images...</p>';
+
+    try {
+        const items = await directoryItem.readdir(); // or puter.fs.readdir(directoryItem.path)
+        const imageItems = items.filter(item => 
+            !item.is_dir && IMAGE_EXTENSIONS.some(ext => item.name.toLowerCase().endsWith(ext))
+        );
+
+        if (imageItems.length === 0) {
+            galleryContainer.innerHTML = '<p>No supported image files found in this directory.</p>';
+            return;
+        }
+
+        galleryContainer.innerHTML = ''; // Clear "Loading..."
+
+        for (const imageItem of imageItems) {
+            try {
+                const blob = await imageItem.read(); // or puter.fs.read(imageItem.path)
+                const objectURL = URL.createObjectURL(blob);
+                currentObjectUrls.push(objectURL); // Store for later cleanup
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'gallery-image-wrapper';
+                
+                const img = document.createElement('img');
+                img.src = objectURL;
+                img.alt = imageItem.name;
+                img.title = `${imageItem.name} (${Math.round(imageItem.size / 1024)} KB)`;
+                
+                const namePara = document.createElement('p');
+                namePara.textContent = imageItem.name;
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(namePara);
+                galleryContainer.appendChild(wrapper);
+            } catch (readError) {
+                console.error(`Error reading image ${imageItem.name}:`, readError);
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'gallery-image-wrapper';
+                errorDiv.innerHTML = `<p>Error loading:<br>${imageItem.name}</p>`;
+                galleryContainer.appendChild(errorDiv);
+            }
+        }
+    } catch (error) {
+        console.error('Error listing directory or processing images:', error);
+        galleryContainer.innerHTML = `<p>Error loading gallery: ${error.message}</p>`;
+    }
+}
+
+// Call this from a button click, for example
+// document.getElementById('select-dir-btn').addEventListener('click', async () => {
+//     try {
+//         const directory = await puter.ui.showDirectoryPicker();
+//         if (directory) { // User might cancel the picker
+//             loadImageGallery(directory);
+//         } else {
+//             currentDirectoryPathDiv.textContent = "Directory selection cancelled.";
+//         }
+//     } catch (pickerError) {
+//         console.error("Error with directory picker:", pickerError);
+//         currentDirectoryPathDiv.textContent = `Error selecting directory: ${pickerError.message}`;
+//     }
+// });
+
+// It's good practice to revoke object URLs on page unload
+// window.addEventListener('beforeunload', cleanupPreviousImages);
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself: Simple Image Gallery</h2>
+        <div class="try-it-area">
+            <h3>Select a Directory with Images</h3>
+            <button id="select-gallery-dir-btn">Select Directory from Puter FS</button>
+            <div id="current-dir-path">No directory selected.</div>
+            <div id="image-gallery-container">
+                <p>Images will appear here after selecting a directory.</p>
+            </div>
+            <div class="output" id="gallery-status-output" style="min-height: 20px; margin-top: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const galleryContainerElement = document.getElementById('image-gallery-container');
+        const currentDirectoryPathDivElement = document.getElementById('current-dir-path');
+        const galleryStatusOutputElement = document.getElementById('gallery-status-output');
+
+        const IMAGE_EXTENSIONS_DEMO = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.bmp'];
+        let currentObjectUrlsDemo = [];
+
+        function displayGalleryStatus(message, isError = false) {
+            galleryStatusOutputElement.textContent = message;
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (isError) {
+                galleryStatusOutputElement.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                galleryStatusOutputElement.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        function cleanupPreviousImagesDemo() {
+            currentObjectUrlsDemo.forEach(url => URL.revokeObjectURL(url));
+            currentObjectUrlsDemo = [];
+            galleryContainerElement.innerHTML = '';
+        }
+
+        async function loadImageGalleryFromPuterFS(directoryItem) {
+            cleanupPreviousImagesDemo();
+            currentDirectoryPathDivElement.textContent = `Loading images from: ${directoryItem.path}`;
+            galleryContainerElement.innerHTML = '<p>Scanning directory and loading images...</p>';
+            displayGalleryStatus('Loading images...');
+
+            try {
+                const items = await directoryItem.readdir();
+                const imageItems = items.filter(item =>
+                    !item.is_dir && IMAGE_EXTENSIONS_DEMO.some(ext => item.name.toLowerCase().endsWith(ext))
+                );
+
+                if (imageItems.length === 0) {
+                    galleryContainerElement.innerHTML = `<p>No supported image files (e.g., .jpg, .png, .gif) found in '${directoryItem.name}'.</p>`;
+                    displayGalleryStatus('No images found.');
+                    return;
+                }
+
+                galleryContainerElement.innerHTML = ''; // Clear "Loading..."
+                let loadedCount = 0;
+                displayGalleryStatus(`Found ${imageItems.length} potential images. Loading them...`);
+
+                // Process images one by one or in small batches if memory is a concern
+                for (const imageItem of imageItems) {
+                    try {
+                        const blob = await imageItem.read();
+                        const objectURL = URL.createObjectURL(blob);
+                        currentObjectUrlsDemo.push(objectURL);
+
+                        const wrapper = document.createElement('div');
+                        wrapper.className = 'gallery-image-wrapper';
+                        
+                        const img = document.createElement('img');
+                        img.src = objectURL;
+                        img.alt = imageItem.name;
+                        img.title = `${imageItem.name} (${imageItem.size ? Math.round(imageItem.size / 1024) + ' KB' : 'Size N/A'})`;
+                        
+                        const namePara = document.createElement('p');
+                        namePara.textContent = imageItem.name;
+
+                        wrapper.appendChild(img);
+                        wrapper.appendChild(namePara);
+                        galleryContainerElement.appendChild(wrapper);
+                        loadedCount++;
+                    } catch (readError) {
+                        console.error(`Error reading image ${imageItem.name}:`, readError);
+                        const errorDiv = document.createElement('div');
+                        errorDiv.className = 'gallery-image-wrapper';
+                        errorDiv.innerHTML = `<p style="color:red;">Error:<br>${imageItem.name}<br><small>${readError.message}</small></p>`;
+                        galleryContainerElement.appendChild(errorDiv);
+                    }
+                }
+                 displayGalleryStatus(`Displayed ${loadedCount} of ${imageItems.length} images.`);
+
+            } catch (error) {
+                console.error('Error listing directory or processing images:', error);
+                galleryContainerElement.innerHTML = `<p>Error loading gallery from '${directoryItem.name}': ${error.message}</p>`;
+                displayGalleryStatus(`Error: ${error.message}`, true);
+            }
+        }
+
+        document.getElementById('select-gallery-dir-btn').addEventListener('click', async () => {
+            displayGalleryStatus('Opening directory picker...');
+            try {
+                const directory = await puter.ui.showDirectoryPicker();
+                if (directory) {
+                    if (!directory.is_dir) {
+                        displayGalleryStatus('Error: The selected item is not a directory.', true);
+                        currentDirectoryPathDivElement.textContent = "Selected item was not a directory.";
+                        return;
+                    }
+                    loadImageGalleryFromPuterFS(directory);
+                } else {
+                    displayGalleryStatus('Directory selection cancelled.');
+                    currentDirectoryPathDivElement.textContent = "Directory selection cancelled.";
+                }
+            } catch (pickerError) {
+                console.error("Error with directory picker:", pickerError);
+                displayGalleryStatus(`Error selecting directory: ${pickerError.message}`, true);
+                currentDirectoryPathDivElement.textContent = `Error selecting directory.`;
+            }
+        });
+
+        // Revoke object URLs when the iframe/page is about to be unloaded
+        window.addEventListener('beforeunload', cleanupPreviousImagesDemo);
+
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

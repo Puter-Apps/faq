@@ -1,0 +1,324 @@
+<!-- q: How do I use the Puter Key-Value store? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Puter KV Store Tutorial</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"], /* Adjusted selector */
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area,
+        body.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3,
+        body.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label,
+        body.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"],
+        .try-it-area input[type="checkbox"] { /* Combined for consistency */
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area input[type="checkbox"], /* Combined for consistency */
+        body.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area input[type="checkbox"] { /* Combined for consistency */
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; } /* Specific for checkbox */
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+        }
+        html.dark-mode .try-it-area button,
+        body.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 35px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output,
+        body.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+    </style>
+</head>
+<body>
+    <h1>How do I use the Puter Key-Value (KV) store?</h1>
+    <p>The Puter KV store (<code>puter.kv</code>) provides a simple and convenient way to store and retrieve key-value data for your application. It's perfect for user preferences, application state, or other small to medium-sized data. Each app gets its own sandboxed KV store per user, ensuring data isolation.</p>
+    <p>Puter.js will automatically prompt you to sign in with your Puter account if you're not already authenticated when you try to use these features.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Setting a Value (<code>puter.kv.set</code>)</h2>
+        <p>Use <code>puter.kv.set(key, value)</code> to store a new key-value pair or update an existing key's value. The <code>key</code> must be a string, and the <code>value</code> can be a string, number, or boolean.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.kv.set('myKey', 'myValue').then(() => {
+    console.log('Value saved!');
+    // You can update an output area here
+}).catch(error => {
+    console.error('Error saving value:', error);
+});
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Set Value</h3>
+            <label for="set-key">Key:</label>
+            <input type="text" id="set-key" value="username">
+            <label for="set-value">Value:</label>
+            <input type="text" id="set-value" value="AlicePuter">
+            <button id="set-value-btn">Set Value</button>
+            <div class="output" id="set-output">Output will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Getting a Value (<code>puter.kv.get</code>)</h2>
+        <p>Use <code>puter.kv.get(key)</code> to retrieve the value associated with a given key. If the key doesn't exist, it returns <code>null</code>.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.kv.get('myKey').then(value => {
+    if (value !== null) {
+        console.log('Retrieved value:', value);
+    } else {
+        console.log('Key not found.');
+    }
+}).catch(error => {
+    console.error('Error getting value:', error);
+});
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Get Value</h3>
+            <label for="get-key">Key:</label>
+            <input type="text" id="get-key" value="username">
+            <button id="get-value-btn">Get Value</button>
+            <div class="output" id="get-output">Output will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Deleting a Key (<code>puter.kv.del</code>)</h2>
+        <p>Use <code>puter.kv.del(key)</code> to remove a key and its associated value from the store.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.kv.del('myKey').then(() => {
+    console.log('Key deleted.');
+}).catch(error => {
+    console.error('Error deleting key:', error);
+});
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Delete Key</h3>
+            <label for="delete-key">Key:</label>
+            <input type="text" id="delete-key" value="username">
+            <button id="delete-key-btn">Delete Key</button>
+            <div class="output" id="delete-output">Output will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>4. Listing Keys (<code>puter.kv.list</code>)</h2>
+        <p>Use <code>puter.kv.list(pattern, returnValues)</code> to get a list of keys.
+        You can provide an optional <code>pattern</code> (e.g., <code>user*</code> to match keys starting with "user").
+        Set <code>returnValues</code> to <code>true</code> to get an array of objects containing both key and value.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// List all keys
+puter.kv.list().then(keys => {
+    console.log('All keys:', keys);
+}).catch(error => {
+    console.error('Error listing keys:', error);
+});
+
+// List keys matching a pattern and their values
+puter.kv.list('user*', true).then(items => {
+    console.log('User items:', items);
+}).catch(error => {
+    console.error('Error listing items:', error);
+});
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: List Keys</h3>
+            <label for="list-pattern">Pattern (optional, e.g., user*):</label>
+            <input type="text" id="list-pattern" placeholder="* (default for all keys)">
+            <label>
+                <input type="checkbox" id="list-return-values"> Return values along with keys
+            </label>
+            <br><br>
+            <button id="list-keys-btn">List Keys</button>
+            <div class="output" id="list-output">Output will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f'; // Specific error colors
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        // Set Value
+        document.getElementById('set-value-btn').addEventListener('click', () => {
+            const key = document.getElementById('set-key').value;
+            const value = document.getElementById('set-value').value;
+            const outputEl = 'set-output';
+            if (!key) {
+                displayOutput(outputEl, 'Error: Key cannot be empty.', true);
+                return;
+            }
+            displayOutput(outputEl, 'Setting value...');
+            puter.kv.set(key, value)
+                .then(() => {
+                    displayOutput(outputEl, `Successfully set key "${key}" to value "${value}".`);
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error setting value: ${error.message || error}`, true);
+                });
+        });
+
+        // Get Value
+        document.getElementById('get-value-btn').addEventListener('click', () => {
+            const key = document.getElementById('get-key').value;
+            const outputEl = 'get-output';
+            if (!key) {
+                displayOutput(outputEl, 'Error: Key cannot be empty.', true);
+                return;
+            }
+            displayOutput(outputEl, 'Getting value...');
+            puter.kv.get(key)
+                .then(value => {
+                    if (value !== null) {
+                        displayOutput(outputEl, `Value for key "${key}": ${value}`);
+                    } else {
+                        displayOutput(outputEl, `Key "${key}" not found.`);
+                    }
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error getting value: ${error.message || error}`, true);
+                });
+        });
+
+        // Delete Key
+        document.getElementById('delete-key-btn').addEventListener('click', () => {
+            const key = document.getElementById('delete-key').value;
+            const outputEl = 'delete-output';
+            if (!key) {
+                displayOutput(outputEl, 'Error: Key cannot be empty.', true);
+                return;
+            }
+            displayOutput(outputEl, 'Deleting key...');
+            puter.kv.del(key)
+                .then(() => {
+                    displayOutput(outputEl, `Successfully deleted key "${key}".`);
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error deleting key: ${error.message || error}`, true);
+                });
+        });
+
+        // List Keys
+        document.getElementById('list-keys-btn').addEventListener('click', () => {
+            const patternInput = document.getElementById('list-pattern').value;
+            const pattern = patternInput.trim() === '' ? '*' : patternInput; // Default to '*' if empty
+            const returnValues = document.getElementById('list-return-values').checked;
+            const outputEl = 'list-output';
+
+            displayOutput(outputEl, 'Listing keys...');
+            puter.kv.list(pattern, returnValues)
+                .then(result => {
+                    if (result && result.length > 0) {
+                        displayOutput(outputEl, `Found keys/items for pattern "${pattern}":\n${JSON.stringify(result, null, 2)}`);
+                    } else {
+                        displayOutput(outputEl, `No keys/items found for pattern "${pattern}".`);
+                    }
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error listing keys: ${error.message || error}`, true);
+                });
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <!-- <script> Prism.highlightAll(); </script> --> <!-- Usually not needed if JS is after markup -->
+</body>
+</html>

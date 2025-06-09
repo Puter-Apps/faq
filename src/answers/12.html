@@ -1,0 +1,354 @@
+<!-- q: How can my app open another window of itself and communicate between them? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>App Self-Launch & Inter-Window Communication</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) {
+          try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } }
+        } if (isDark) { document.documentElement.classList.add('dark-mode'); }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ol,
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label { /* Though not used heavily in this example */
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px; margin-right: 10px;
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 100px; /* Increased min-height */
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+            max-height: 300px; overflow-y: auto; /* Scroll for long logs */
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .info-box, .warning-box {
+            padding: 15px; margin-top: 20px; margin-bottom: 20px; border-radius: 0 4px 4px 0;
+        }
+        .info-box {
+            background-color: var(--answer-pre-bg-light); border-left: 4px solid var(--answer-accent-light);
+        }
+        html.dark-mode .info-box {
+            background-color: var(--answer-pre-bg-dark); border-left-color: var(--answer-accent-dark);
+        }
+        .warning-box {
+            background-color: #fff3cd; border-left: 4px solid #ffeeba; color: #856404;
+        }
+        html.dark-mode .warning-box {
+            background-color: #332701; border-left-color: #66512c; color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <h1>How can my app open another window of itself and communicate between them?</h1>
+    <p>Puter.js enables applications to launch new instances of themselves (or other apps) and establish communication channels between these parent and child windows. This is achieved using <code>puter.ui.launchApp()</code>, which returns an <code>AppConnection</code> object, and <code>puter.ui.parentApp()</code>, which allows a child instance to connect back to its launcher.</p>
+    <div class="warning-box">
+        <strong>Important Note on Demonstration:</strong> This page explains the concepts and shows the code structure. Fully demonstrating true inter-window communication requires running this logic as a single, self-contained Puter application (or a web page that can be launched via its own URL in a new tab/window by <code>puter.ui.launchApp</code>). The "Try It Yourself" section here will simulate the log output conceptually within this single page.
+    </div>
+
+    <div class="tutorial-section">
+        <h2>1. Core APIs for Multi-Window Apps</h2>
+        <ul>
+            <li><strong><code>puter.ui.launchApp(appNameOrId, args)</code>:</strong>
+                <ul>
+                    <li>Call this from the "parent" window.</li>
+                    <li>If <code>appNameOrId</code> is omitted or matches the current app's ID (<code>puter.appID</code>), it launches a new instance of the current application. You can also use <code>window.location.href</code> if the app is a simple web page being tested outside the full Puter desktop environment.</li>
+                    <li>The optional <code>args</code> object can pass initial data to the new instance.</li>
+                    <li>Returns a Promise that resolves to an <code>AppConnection</code> object, which is the parent's handle to the child.</li>
+                </ul>
+            </li>
+            <li><strong><code>puter.ui.parentApp()</code>:</strong>
+                <ul>
+                    <li>Call this in any app instance when it loads.</li>
+                    <li>If the instance was launched by another app (via <code>launchApp</code>), this returns an <code>AppConnection</code> object representing the connection to its parent.</li>
+                    <li>If the instance was launched directly by the user (not by another app), it returns <code>null</code>. This is how an app instance can determine if it's a "parent" or a "child".</li>
+                </ul>
+            </li>
+            <li><strong><code>AppConnection</code> Object:</strong> This object provides the communication bridge. Key methods/events:
+                <ul>
+                    <li><code>appConnection.postMessage(message)</code>: Sends a message (any structured-clonable JavaScript object) to the connected window.</li>
+                    <li><code>appConnection.on('message', (message) => { /* handler */ })</code>: Listens for messages received from the connected window.</li>
+                    <li><code>appConnection.on('close', () => { /* handler */ })</code>: (Typically used by parent) Listens for when the child window is closed.</li>
+                    <li><code>appConnection.close()</code>: (Typically used by parent) Programmatically closes the child window.</li>
+                </ul>
+            </li>
+            <li><strong><code>puter.ui.onWindowClose(() => { /* handler */ })</code>:</strong> Allows an app instance (especially a child) to perform cleanup or notify its parent before it's closed by the user (e.g., by clicking the window's 'X' button). Call <code>puter.exit()</code> within this handler if you want to allow the close, or prevent default to keep the window open.</li>
+        </ul>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example Code Structure (Conceptual Single-App Logic)</h2>
+        <p>The following code demonstrates the logic you would typically embed within a single application. The app checks if it's a parent or a child upon loading.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// --- COMMON CODE (accessible to both parent and child logic) ---
+let appInstanceType = 'unknown'; // 'parent' or 'child'
+let connectionToOtherWindow = null; // AppConnection object
+
+function logToUI(message) {
+    const logArea = document.getElementById('comms-log-output'); // Assume this div exists
+    if (logArea) {
+        const timestamp = new Date().toLocaleTimeString();
+        logArea.textContent += `[${timestamp} ${appInstanceType.toUpperCase()}] ${message}\n`;
+        logArea.scrollTop = logArea.scrollHeight; // Auto-scroll
+    }
+    console.log(`[${appInstanceType.toUpperCase()}] ${message}`);
+}
+
+// --- PARENT-SPECIFIC LOGIC ---
+async function initializeAsParent() {
+    appInstanceType = 'parent';
+    logToUI("Initialized as PARENT window.");
+    // Setup UI elements for parent actions (e.g., buttons to launch child, send message)
+}
+
+async function launchChildInstance() {
+    if (connectionToOtherWindow) {
+        logToUI("Child already launched or launch in progress.");
+        return;
+    }
+    logToUI("Attempting to launch child instance...");
+    try {
+        // For a real Puter app, use puter.appID.
+        // For testing a simple HTML page, window.location.href might work if served correctly.
+        const appIdToLaunch = puter.appID || window.location.href;
+        connectionToOtherWindow = await puter.ui.launchApp(appIdToLaunch, { launchedFrom: 'parent_instance_1' });
+        
+        logToUI(`Child instance launched. AppConnection established.`);
+        
+        connectionToOtherWindow.on('message', (msgFromChild) => {
+            logToUI(`Received from Child: "${msgFromChild.text}" (Data: ${JSON.stringify(msgFromChild.data)})`);
+            if (msgFromChild.action === 'request_info') {
+                sendDataToChild({ someData: "Here's the info you wanted!" });
+            }
+        });
+
+        connectionToOtherWindow.on('close', () => {
+            logToUI("Child window was closed.");
+            connectionToOtherWindow = null; // Clear the connection
+        });
+
+        // Send an initial greeting to the child
+        setTimeout(() => { // Slight delay to ensure child is ready
+             if (connectionToOtherWindow) {
+                connectionToOtherWindow.postMessage({ text: "Hello Child, I'm your parent!", data: { parentId: "parent_123" } });
+                logToUI("Sent initial greeting to child.");
+             }
+        }, 1000);
+
+    } catch (error) {
+        logToUI(`Error launching child: ${error.message}`);
+        console.error("Launch error:", error);
+    }
+}
+
+function sendDataToChild(dataToSend = { customData: "Parent's update at " + new Date().toLocaleTimeString() }) {
+    if (connectionToOtherWindow) {
+        connectionToOtherWindow.postMessage({ text: "Data update from parent.", data: dataToSend });
+        logToUI(`Sent to Child: "Data update" (Data: ${JSON.stringify(dataToSend)})`);
+    } else {
+        logToUI("No active child connection to send message to.");
+    }
+}
+
+// --- CHILD-SPECIFIC LOGIC ---
+function initializeAsChild(parentAppConnection) {
+    appInstanceType = 'child';
+    connectionToOtherWindow = parentAppConnection;
+    logToUI("Initialized as CHILD window. Connection to parent established.");
+    // Setup UI elements for child actions (e.g., button to send message to parent)
+
+    connectionToOtherWindow.on('message', (msgFromParent) => {
+        logToUI(`Received from Parent: "${msgFromParent.text}" (Data: ${JSON.stringify(msgFromParent.data)})`);
+    });
+
+    // Example: Child automatically sends a message back after a delay
+    setTimeout(() => {
+        if (connectionToOtherWindow) {
+            connectionToOtherWindow.postMessage({ text: "Hello Parent, child is ready!", data: { childId: "child_ABC" }, action: 'request_info' });
+            logToUI("Sent initial 'ready' message to parent.");
+        }
+    }, 2000); // Give parent a moment to set up its listener
+
+    puter.ui.onWindowClose(() => {
+        logToUI("Window is closing. Attempting to notify parent.");
+        if (connectionToOtherWindow) {
+            // Best effort notification. May not always be delivered if parent closes first or synchronously.
+            // connectionToOtherWindow.postMessage({ text: "Child window is closing.", type: "CHILD_CLOSING" });
+        }
+        puter.exit(); // Allow the window to close
+    });
+}
+
+// --- INITIALIZATION LOGIC (runs when the page/app loads) ---
+document.addEventListener('DOMContentLoaded', () => {
+    const parentConn = puter.ui.parentApp();
+    if (parentConn) {
+        // This instance is a child
+        initializeAsChild(parentConn);
+        // Hide/show UI elements specific to child
+        document.getElementById('parent-actions-try').style.display = 'none';
+        document.getElementById('child-actions-try').style.display = 'block';
+    } else {
+        // This instance is a parent (or standalone)
+        initializeAsParent();
+        // Hide/show UI elements specific to parent
+        document.getElementById('parent-actions-try').style.display = 'block';
+        document.getElementById('child-actions-try').style.display = 'none';
+    }
+});
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself (Conceptual Log)</h2>
+        <div class="try-it-area">
+            <h3>Simulated Actions & Communication Log</h3>
+            <p>In a real Puter app, clicking "Launch Child Instance" would open a new window of this same application. That new window would detect it's a child (<code>puter.ui.parentApp()</code> would return a connection) and run its child-specific logic. This log will show messages as if that interaction is happening.</p>
+            
+            <div id="parent-actions-try" style="display:none;">
+                <button id="launch-child-btn-try">Launch Child Instance (Simulated)</button>
+                <button id="send-to-child-btn-try">Send Message to Child (Simulated)</button>
+            </div>
+            <div id="child-actions-try" style="display:none;">
+                <button id="send-to-parent-btn-try">Send Message to Parent (Simulated)</button>
+            </div>
+
+            <div class="output" id="comms-log-output">Initializing log...\n</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Actual Script for this Demo Page (Simulating the Above Logic) ---
+        let sim_appInstanceType = 'parent'; // Default to parent for the initial view
+        let sim_connectionToOtherWindow = null; // Simulated AppConnection
+        let sim_isChildLaunched = false;
+
+        function sim_logToUI(message) {
+            const logArea = document.getElementById('comms-log-output');
+            if (logArea) {
+                const timestamp = new Date().toLocaleTimeString();
+                logArea.textContent += `[${timestamp} ${sim_appInstanceType.toUpperCase()}] ${message}\n`;
+                logArea.scrollTop = logArea.scrollHeight;
+            }
+            console.log(`[${sim_appInstanceType.toUpperCase()}] ${message}`);
+        }
+
+        // Simulate Parent Logic
+        document.getElementById('launch-child-btn-try').addEventListener('click', () => {
+            if (sim_isChildLaunched) {
+                sim_logToUI("Simulated child already 'launched'.");
+                return;
+            }
+            sim_logToUI("Simulating: Launching child instance...");
+            sim_isChildLaunched = true;
+            // Simulate AppConnection properties for the demo
+            sim_connectionToOtherWindow = {
+                postMessage: (msg) => {
+                    sim_logToUI(`Simulating: Parent sending to Child: "${msg.text}"`);
+                    // Simulate child receiving and possibly replying
+                    setTimeout(() => {
+                        sim_logToUI(`Simulating: Child received: "${msg.text}". Child might process this.`);
+                        if(msg.text.includes("Hello Child")){ // Initial greeting
+                             setTimeout(() => {
+                                sim_logToUI(`Simulating: Child auto-replying: "Hello Parent, child is ready!"`);
+                                // Simulate child sending to parent
+                                sim_logToUI(`Simulating: Parent received from Child: "Hello Parent, child is ready!"`);
+                             }, 500);
+                        }
+                    }, 100);
+                },
+                // on: (event, handler) => { /* In a real scenario, this would register handlers */ }
+            };
+            sim_logToUI("Simulating: Child 'launched'. Parent can now send messages.");
+            // Simulate initial parent message
+            setTimeout(() => {
+                 if (sim_connectionToOtherWindow) sim_connectionToOtherWindow.postMessage({ text: "Hello Child, I'm your parent!", data: { parentId: "parent_123" } });
+            }, 500);
+        });
+
+        document.getElementById('send-to-child-btn-try').addEventListener('click', () => {
+            if (!sim_isChildLaunched || !sim_connectionToOtherWindow) {
+                sim_logToUI("Simulating: No child 'launched' to send message to.");
+                return;
+            }
+            const dataToSend = { customData: "Parent's simulated update at " + new Date().toLocaleTimeString() };
+            sim_connectionToOtherWindow.postMessage({ text: "Data update from parent.", data: dataToSend });
+        });
+        
+        // Simulate Child Logic Button (would be in the child window)
+        document.getElementById('send-to-parent-btn-try').addEventListener('click', () => {
+            // In a real child, it would use its 'connectionToOtherWindow' (which is parentConnection)
+            sim_logToUI("Simulating: Child sending to Parent: 'Child initiated ping!'");
+             // Simulate parent receiving
+            setTimeout(() => sim_logToUI(`Simulating: Parent received from Child: 'Child initiated ping!'`), 100);
+        });
+
+        // Initial UI setup based on a conceptual parent/child state for this demo page
+        document.addEventListener('DOMContentLoaded', () => {
+            // This demo page itself is always the "parent" context simulator
+            sim_logToUI("Page loaded. Acting as PARENT simulator.");
+            document.getElementById('parent-actions-try').style.display = 'block';
+            document.getElementById('child-actions-try').style.display = 'none';
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

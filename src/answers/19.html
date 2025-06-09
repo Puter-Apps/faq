@@ -1,0 +1,280 @@
+<!-- q: How can I show a progress indicator while uploading large files? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>File Upload Progress Indication</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, .tutorial-section > pre.code-example[class*="language-"], .tutorial-section > ul { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em; color: var(--answer-text-secondary-light); }
+        html.dark-mode .try-it-area label { color: var(--answer-text-secondary-dark); }
+        .try-it-area input[type="file"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="file"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 50px; white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; }
+        html.dark-mode .output { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+        
+        /* Simple Progress Bar Styling */
+        .progress-bar-container {
+            width: 100%;
+            background-color: var(--answer-border-light);
+            border-radius: 4px;
+            margin-top: 10px;
+            display: none; /* Hidden by default */
+        }
+        html.dark-mode .progress-bar-container {
+             background-color: var(--answer-border-dark);
+        }
+        .progress-bar-fill {
+            width: 0%; /* Initial width */
+            height: 20px;
+            background-color: var(--answer-accent-light);
+            border-radius: 4px;
+            text-align: center;
+            line-height: 20px;
+            color: white;
+            font-size: 0.8em;
+            transition: width 0.3s ease-out; /* Smooth transition for determinate progress */
+        }
+        html.dark-mode .progress-bar-fill {
+            background-color: var(--answer-accent-dark);
+            color: var(--answer-bg-dark);
+        }
+        .progress-bar-fill.indeterminate {
+            background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent);
+            background-size: 1rem 1rem;
+            animation: progress-bar-stripes 1s linear infinite;
+            width: 100% !important; /* Full width for indeterminate */
+        }
+        @keyframes progress-bar-stripes {
+            from { background-position: 1rem 0; }
+            to { background-position: 0 0; }
+        }
+        .info-box { background-color: var(--answer-pre-bg-light); border-left: 4px solid var(--answer-accent-light); padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;}
+        html.dark-mode .info-box { background-color: var(--answer-pre-bg-dark); border-left-color: var(--answer-accent-dark); }
+    </style>
+</head>
+<body>
+    <h1>How can I show a progress indicator while uploading large files?</h1>
+    <p>Showing upload progress is crucial for good user experience, especially with large files. While the <code>puter.fs.upload()</code> method in the provided Puter.js documentation doesn't explicitly detail built-in support for granular progress events (like <code>onprogress</code> giving bytes loaded/total), you can still provide feedback to the user.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Understanding the Limitation</h2>
+        <p>Without explicit progress events from <code>puter.fs.upload()</code>, creating a precise, percentage-based progress bar that reflects actual bytes transferred is difficult. The API call is essentially a black box in terms of its internal progress once initiated.</p>
+        <p>Therefore, the primary approach is to show an **indeterminate progress indicator**. This tells the user that an operation is ongoing, even if you can't show how much of it is complete.</p>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Implementing an Indeterminate Progress Indicator</h2>
+        <p>You can show a loading spinner, an animated progress bar, or a simple "Uploading, please wait..." message. The indicator should be displayed when the upload starts and hidden when the upload completes (either successfully or with an error).</p>
+        <pre class="code-example line-numbers"><code class="language-markup">
+<!-- HTML Structure -->
+<label for="file-upload-progress">Select file to upload:</label>
+<input type="file" id="file-upload-progress">
+<button id="upload-button-progress">Upload File</button>
+
+<!-- Progress Bar Container (initially hidden) -->
+<div class="progress-bar-container" id="progress-container">
+    <div class="progress-bar-fill indeterminate" id="progress-bar">Uploading...</div>
+</div>
+
+<div class="output" id="upload-status-progress">Select a file and click Upload.</div>
+        </code></pre>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// JavaScript Logic
+const fileInputProgress = document.getElementById('file-upload-progress');
+const uploadButtonProgress = document.getElementById('upload-button-progress');
+const progressContainer = document.getElementById('progress-container');
+const progressBar = document.getElementById('progress-bar');
+const uploadStatusProgress = document.getElementById('upload-status-progress');
+
+uploadButtonProgress.addEventListener('click', async () => {
+    if (fileInputProgress.files.length === 0) {
+        uploadStatusProgress.textContent = 'Please select a file first.';
+        return;
+    }
+
+    const fileToUpload = fileInputProgress.files[0];
+    
+    // Show indeterminate progress
+    uploadStatusProgress.textContent = `Uploading '${fileToUpload.name}'... Please wait.`;
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '100%'; // For indeterminate, it's full width and animated
+    progressBar.classList.add('indeterminate');
+    progressBar.textContent = 'Uploading...';
+    uploadButtonProgress.disabled = true;
+
+    try {
+        // Example: Upload to a specific directory with deduplication
+        const uploadedFileObjects = await puter.fs.upload(
+            [fileToUpload], 
+            'large_file_uploads/', 
+            { createMissingParents: true, dedupeName: true }
+        );
+        
+        if (uploadedFileObjects && uploadedFileObjects.length > 0) {
+            const uploadedFile = uploadedFileObjects[0];
+            uploadStatusProgress.textContent = `Successfully uploaded: ${uploadedFile.name} (Path: ${uploadedFile.path})`;
+            progressBar.textContent = 'Upload Complete!';
+            progressBar.classList.remove('indeterminate'); // Stop animation
+             // Optional: Show a 100% fill briefly for visual confirmation
+            progressBar.style.width = '100%';
+            console.log('Upload successful:', uploadedFile);
+        } else {
+            throw new Error("Upload completed but no file objects returned.");
+        }
+    } catch (error) {
+        uploadStatusProgress.textContent = `Upload failed: ${error.message}`;
+        progressBar.textContent = 'Upload Failed!';
+        progressBar.style.backgroundColor = 'red'; // Indicate error on progress bar
+        progressBar.classList.remove('indeterminate');
+        console.error('Upload error:', error);
+    } finally {
+        // Hide progress bar after a delay or allow user to dismiss
+        // For this demo, we'll just leave it as is after completion/failure
+        // To hide: setTimeout(() => { progressContainer.style.display = 'none'; }, 3000);
+        uploadButtonProgress.disabled = false;
+        fileInputProgress.value = ''; // Clear file input
+    }
+});
+        </code></pre>
+    </div>
+    
+    <div class="tutorial-section">
+        <h2>3. Advanced: Conceptual Client-Side Chunking (If API Supported It)</h2>
+        <div class="info-box">
+            <p><strong>Note:</strong> The following is a **conceptual explanation**. The standard <code>puter.fs.upload()</code> or <code>puter.fs.write()</code> as documented may not directly support the chunk-by-chunk append operations needed for precise client-side progress tracking of large files without further Puter.js SDK features for streaming writes or Blob appends.</p>
+        </div>
+        <p>If Puter.js were to support a way to write file chunks (e.g., an append mode for <code>puter.fs.write</code> with Blobs, or a streaming upload API), you could implement client-side progress:</p>
+        <ol>
+            <li>Use the HTML5 File API (<code>File.slice()</code>) to divide the local file into smaller chunks (Blobs).</li>
+            <li>Upload each chunk sequentially (or in parallel, if supported and managed carefully).</li>
+            <li>After each successful chunk upload, update your progress bar: <code>(chunksUploaded / totalChunks) * 100</code>.</li>
+        </ol>
+        <p>This approach gives you full control over the upload process and progress reporting but is significantly more complex to implement and relies on specific API capabilities for chunked/streaming writes that are not explicitly detailed for <code>puter.fs.upload()</code> in the provided documentation.</p>
+    </div>
+
+
+    <div class="tutorial-section">
+        <h2>4. Try It Yourself: Indeterminate Upload Progress</h2>
+        <div class="try-it-area">
+            <h3>Upload a File and See Activity</h3>
+            <label for="file-upload-progress-try">Select a (potentially large) file:</label>
+            <input type="file" id="file-upload-progress-try">
+            <button id="upload-button-progress-try">Upload File with Activity Indicator</button>
+
+            <div class="progress-bar-container" id="progress-container-try">
+                <div class="progress-bar-fill indeterminate" id="progress-bar-try" style="width:0%;">Waiting...</div>
+            </div>
+            <div class="output" id="upload-status-progress-try">Select a file and click "Upload File".</div>
+        </div>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayUploadStatus(message, isError = false) {
+            const el = document.getElementById('upload-status-progress-try');
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            el.textContent = message;
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        const fileInputProgressTry = document.getElementById('file-upload-progress-try');
+        const uploadButtonProgressTry = document.getElementById('upload-button-progress-try');
+        const progressContainerTry = document.getElementById('progress-container-try');
+        const progressBarTry = document.getElementById('progress-bar-try');
+
+        uploadButtonProgressTry.addEventListener('click', async () => {
+            if (fileInputProgressTry.files.length === 0) {
+                displayUploadStatus('Please select a file first.', true);
+                return;
+            }
+
+            const fileToUpload = fileInputProgressTry.files[0];
+            
+            displayUploadStatus(`Uploading '${fileToUpload.name}'... This might take a moment for large files.`);
+            progressContainerTry.style.display = 'block';
+            progressBarTry.className = 'progress-bar-fill indeterminate'; // Ensure indeterminate animation
+            progressBarTry.style.width = '100%'; 
+            progressBarTry.textContent = 'Uploading...';
+            uploadButtonProgressTry.disabled = true;
+            fileInputProgressTry.disabled = true;
+
+            try {
+                const startTime = Date.now();
+                const uploadedFileObjects = await puter.fs.upload(
+                    [fileToUpload], 
+                    'uploads_with_progress_demo/', 
+                    { createMissingParents: true, dedupeName: true }
+                );
+                const endTime = Date.now();
+                const duration = ((endTime - startTime) / 1000).toFixed(2);
+                
+                if (uploadedFileObjects && uploadedFileObjects.length > 0) {
+                    const uploadedFile = uploadedFileObjects[0];
+                    displayUploadStatus(`Successfully uploaded: ${uploadedFile.name} (Path: ${uploadedFile.path}, Size: ${uploadedFile.size} bytes) in ${duration} seconds.`);
+                    progressBarTry.className = 'progress-bar-fill'; // Remove indeterminate
+                    progressBarTry.style.width = '100%';
+                    progressBarTry.textContent = 'Upload Complete!';
+                    progressBarTry.style.backgroundColor = 'var(--answer-accent-light)'; // Success color
+                    if(document.documentElement.classList.contains('dark-mode')) {
+                        progressBarTry.style.backgroundColor = 'var(--answer-accent-dark)';
+                    }
+                    console.log('Upload successful:', uploadedFile);
+                } else {
+                     // This case should ideally not happen if upload doesn't throw but returns empty
+                    throw new Error("Upload API call succeeded but returned no file information.");
+                }
+            } catch (error) {
+                displayUploadStatus(`Upload failed: ${error.message || JSON.stringify(error)}`, true);
+                progressBarTry.className = 'progress-bar-fill'; // Remove indeterminate
+                progressBarTry.style.width = '100%';
+                progressBarTry.textContent = 'Upload Failed!';
+                progressBarTry.style.backgroundColor = '#d9534f'; // Error color
+                console.error('Upload error:', error);
+            } finally {
+                uploadButtonProgressTry.disabled = false;
+                fileInputProgressTry.disabled = false;
+                fileInputProgressTry.value = ''; 
+                // Consider hiding progress bar after a few seconds:
+                // setTimeout(() => { progressContainerTry.style.display = 'none'; progressBarTry.style.width = '0%'; progressBarTry.textContent = 'Waiting...'; }, 5000);
+            }
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!-- q: How do I increment a counter in the Key-Value store (like page views)? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Incrementing KV Store Counters</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, .tutorial-section > pre.code-example[class*="language-"], .tutorial-section > ul { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em; color: var(--answer-text-secondary-light); }
+        html.dark-mode .try-it-area label { color: var(--answer-text-secondary-dark); }
+        .try-it-area input[type="text"], .try-it-area input[type="number"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"], html.dark-mode .try-it-area input[type="number"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 40px; white-space: pre-wrap; word-break: break-all; font-size: 1em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; font-weight: bold; text-align: center;}
+        html.dark-mode .output { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+    </style>
+</head>
+<body>
+    <h1>How do I increment or decrement a counter in the Key-Value store?</h1>
+    <p>Puter's Key-Value (KV) store provides an atomic increment operation, <code>puter.kv.incr(key, amount)</code>, which is perfect for use cases like counting page views or likes. While a dedicated <code>decr</code> function might have issues or not be directly available in all SDK versions, you can achieve decrementing by using <code>incr</code> with a negative amount.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Incrementing a Value with <code>puter.kv.incr()</code></h2>
+        <p>The <code>puter.kv.incr(key, amount)</code> method increments the numeric value of <code>key</code> by <code>amount</code>.
+        If <code>key</code> does not exist, it is initialized to <code>0</code> before performing the increment.
+        If <code>amount</code> is omitted, it defaults to <code>1</code>. The method returns a Promise that resolves to the new value of the key after the increment.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const pageViewCounterKey = 'myApp_pageViews';
+
+// Increment by 1 (default amount)
+puter.kv.incr(pageViewCounterKey)
+    .then(newValue => {
+        console.log(`Page views are now: ${newValue}`);
+    })
+    .catch(error => {
+        console.error('Error incrementing page views:', error);
+    });
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Decrementing a Value (Using <code>puter.kv.incr()</code> with a Negative Amount)</h2>
+        <p>To decrement a value, you can use <code>puter.kv.incr(key, -amount)</code>. This effectively subtracts the <code>amount</code> from the current value of the key. If the key doesn't exist, it will be initialized to <code>0</code>, and then the negative amount will be added (resulting in a negative value).</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const userCreditsKey = 'myApp_userCredits';
+
+// Assume userCreditsKey was set to 100 previously.
+// To decrement by 1:
+puter.kv.incr(userCreditsKey, -1) // Note the -1
+    .then(newValue => {
+        console.log(`User credits remaining: ${newValue}`);
+    })
+    .catch(error => {
+        console.error('Error decrementing credits:', error);
+    });
+
+// To decrement by 10:
+puter.kv.incr(userCreditsKey, -10) // Note the -10
+    .then(newValue => {
+        console.log(`User credits after spending 10 are now: ${newValue}`);
+    })
+    .catch(error => {
+        console.error('Error decrementing credits by 10:', error);
+    });
+        </code></pre>
+        <p class="info-box"><strong>Note:</strong> The official documentation also lists <code>puter.kv.decr()</code>. If that function works correctly in your Puter.js version, you can use it directly. This example uses <code>incr</code> with a negative value as a reliable alternative if <code>decr</code> is problematic.</p>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself: Interactive Counter</h2>
+        <div class="try-it-area">
+            <h3>Live KV Counter</h3>
+            <label for="counter-key">Counter Key Name (e.g., <code>myCounter</code> or <code>siteLikes</code>):</label>
+            <input type="text" id="counter-key" value="demoPageCounter">
+            
+            <label for="change-amount">Amount to Increment/Decrement By:</label>
+            <input type="number" id="change-amount" value="1" min="1">
+
+            <button id="incr-btn">Increment</button>
+            <button id="decr-btn">Decrement</button>
+            <button id="get-btn">Get Current Value</button>
+            <button id="reset-btn" style="background-color: #ffc107; color: #333;">Reset Counter (to 0)</button>
+            <p style="margin-top: 15px; font-weight: bold; text-align: center;">Current Counter Value:</p>
+            <div class="output" id="counter-value-output">Click "Get Current Value" or perform an operation.</div>
+        </div>
+    </div>
+
+    <script>
+        // Helper to display messages/values
+        function displayCounterOutput(message, isError = false) {
+            const el = document.getElementById('counter-value-output');
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            el.textContent = message;
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+                 el.style.fontSize = '0.9em'; // Smaller for error messages
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-accent-dark)' : 'var(--answer-accent-light)';
+                el.style.fontSize = '1.5em';
+            }
+        }
+
+        const getCounterKey = () => document.getElementById('counter-key').value.trim() || 'defaultDemoCounter';
+        const getChangeAmount = () => parseInt(document.getElementById('change-amount').value, 10) || 1;
+
+        // Increment
+        document.getElementById('incr-btn').addEventListener('click', async () => {
+            const key = getCounterKey();
+            const amount = getChangeAmount();
+            displayCounterOutput('Incrementing...');
+            try {
+                const newValue = await puter.kv.incr(key, amount);
+                displayCounterOutput(newValue);
+                console.log(`Incremented '${key}' by ${amount}. New value: ${newValue}`);
+            } catch (error) {
+                displayCounterOutput(`Error: ${error.message || JSON.stringify(error)}`, true);
+                console.error(`Error incrementing '${key}':`, error);
+            }
+        });
+
+        // Decrement (using incr with negative amount)
+        document.getElementById('decr-btn').addEventListener('click', async () => {
+            const key = getCounterKey();
+            const amount = getChangeAmount();
+            displayCounterOutput('Decrementing...');
+            try {
+                // Using incr with a negative amount for robust decrementing
+                const newValue = await puter.kv.incr(key, -amount); 
+                displayCounterOutput(newValue);
+                console.log(`Decremented (via incr) '${key}' by ${amount}. New value: ${newValue}`);
+            } catch (error) {
+                displayCounterOutput(`Error: ${error.message || JSON.stringify(error)}`, true);
+                console.error(`Error decrementing '${key}':`, error);
+            }
+        });
+
+        // Get Current Value
+        async function getCurrentCounterValue() {
+            const key = getCounterKey();
+            displayCounterOutput('Fetching...');
+            try {
+                const value = await puter.kv.get(key);
+                displayCounterOutput(value !== null ? value : '0 (Not yet set)');
+                console.log(`Value of '${key}': ${value}`);
+            } catch (error) {
+                displayCounterOutput(`Error: ${error.message || JSON.stringify(error)}`, true);
+                console.error(`Error getting value of '${key}':`, error);
+            }
+        }
+        document.getElementById('get-btn').addEventListener('click', getCurrentCounterValue);
+        
+        // Reset Counter (by setting to 0)
+        document.getElementById('reset-btn').addEventListener('click', async () => {
+            const key = getCounterKey();
+            displayCounterOutput('Resetting...');
+            try {
+                await puter.kv.set(key, 0);
+                displayCounterOutput('0');
+                console.log(`Reset '${key}' to 0.`);
+            } catch (error) {
+                displayCounterOutput(`Error: ${error.message || JSON.stringify(error)}`, true);
+                console.error(`Error resetting '${key}':`, error);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+           getCurrentCounterValue();
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

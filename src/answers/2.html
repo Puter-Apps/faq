@@ -1,0 +1,250 @@
+<!-- q: How do I choose a specific AI model for puter.ai.chat? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Choosing AI Models for puter.ai.chat</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() { /* ... same script ... */ })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area,
+        body.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3,
+        body.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label,
+        body.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area textarea,
+        .try-it-area select {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area textarea,
+        html.dark-mode .try-it-area select,
+        body.dark-mode .try-it-area textarea,
+        body.dark-mode .try-it-area select {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area textarea { min-height: 80px; resize: vertical; }
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+        }
+        html.dark-mode .try-it-area button,
+        body.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 35px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output,
+        body.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        ul.model-list-display {
+            list-style-type: none; padding-left: 0; columns: 2; gap: 10px;
+        }
+        ul.model-list-display li {
+            padding: 8px 12px; margin-bottom: 6px; border-radius: 4px; font-size: 0.9em;
+            background-color: var(--answer-pre-bg-light);
+            border: 1px solid var(--answer-pre-border-light);
+        }
+        html.dark-mode ul.model-list-display li,
+        body.dark-mode ul.model-list-display li {
+            background-color: var(--answer-pre-bg-dark);
+            border-color: var(--answer-pre-border-dark);
+        }
+        .info-box {
+            background-color: var(--answer-pre-bg-light);
+            border-left: 4px solid var(--answer-accent-light);
+            padding: 15px; margin-top: 20px; margin-bottom: 20px; border-radius: 0 4px 4px 0;
+        }
+        html.dark-mode .info-box,
+        body.dark-mode .info-box {
+            background-color: var(--answer-pre-bg-dark);
+            border-left-color: var(--answer-accent-dark);
+        }
+    </style>
+</head>
+<body>
+    <h1>How do I choose a specific AI model for <code>puter.ai.chat</code>?</h1>
+    <p>The <code>puter.ai.chat</code> function is versatile, allowing you to select from various AI models to power your chat completions. By default, if no model is specified, Puter.js uses <code>gpt-4o-mini</code>. To choose a different model, you pass an <code>options</code> object with a <code>model</code> property.</p>
+    <p>This is useful for tailoring the AI's capabilities, response style, or cost-effectiveness (managed through the user's Puter account) to your application's specific needs.</p>
+
+    <div class="tutorial-section">
+        <h2>Specifying a Model</h2>
+        <p>To use a specific model, include it in the <code>options</code> object passed to <code>puter.ai.chat</code>. The position of the <code>options</code> object in the arguments list depends on whether you are also providing an image URL or test mode flag.</p>
+        <p>Common syntax forms:</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Simple prompt with a specified model
+puter.ai.chat(promptString, { model: 'model-name' })
+
+// Prompt with image URL and specified model
+puter.ai.chat(promptString, imageURL, { model: 'model-name' })
+
+// Prompt with messages array and specified model
+puter.ai.chat([messagesArray], { model: 'model-name' })
+        </code></pre>
+        <p>Let's see an example using Anthropic's <code>claude-3-5-sonnet</code> model:</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.ai.chat(
+    "Write a haiku about a cloud.",
+    { model: 'claude-3-5-sonnet' }
+).then(response => {
+    // The actual response content is in response.message.content
+    console.log(response.message.content);
+}).catch(error => {
+    console.error("Error with AI chat:", error.message);
+});
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Chat with a Specific Model</h3>
+            <label for="ai-prompt">Your Prompt:</label>
+            <textarea id="ai-prompt">Tell me a fun fact about space.</textarea>
+
+            <label for="ai-model-select">Choose a Model:</label>
+            <select id="ai-model-select">
+                <option value="gpt-4o-mini">gpt-4o-mini (Default, OpenAI)</option>
+                <option value="gpt-4o">gpt-4o (OpenAI)</option>
+                <option value="claude-3-5-sonnet">claude-3-5-sonnet (Anthropic)</option>
+                <option value="claude-opus-4">claude-opus-4 (Anthropic)</option>
+                <option value="gemini-1.5-flash">gemini-1.5-flash (Google)</option>
+                <option value="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo">Llama 3.1 8B Instruct (Meta/Together)</option>
+                <option value="deepseek-chat">deepseek-chat (DeepSeek)</option>
+            </select>
+
+            <button id="send-chat-btn">Send to AI</button>
+            <div class="output" id="chat-output">AI's response will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>Available Models</h2>
+        <p>Puter.js provides access to a wide range of models from leading AI vendors. Here's a selection of commonly used models (this list is not exhaustive):</p>
+        <ul class="model-list-display">
+            <li><code>gpt-4o-mini</code></li>
+            <li><code>gpt-4o</code></li>
+            <li><code>claude-3-5-sonnet</code></li>
+            <li><code>claude-opus-4</code></li>
+            <li><code>gemini-1.5-flash</code></li>
+            <li><code>gemini-2.0-flash</code></li>
+            <li><code>meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo</code></li>
+            <li><code>meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo</code></li>
+            <li><code>deepseek-chat</code></li>
+            <li><code>mistral-large-latest</code></li>
+        </ul>
+        <div class="info-box">
+            <p><strong>Important:</strong> The list of available models can change frequently as new models are added or updated. For the most current and complete list, please always refer to the <a href="https://docs.puter.com/ai/chat/" target="_blank" rel="noopener noreferrer">official <code>puter.ai.chat</code> documentation on docs.puter.com</a>.</p>
+        </div>
+        <p>Different models have varying strengths, token limits, response characteristics, and underlying costs (which are covered by the end-user's Puter account). Choosing the right model depends on your application's requirements for speed, complexity of tasks, creativity, and conciseness.</p>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') { // For the AI response object
+                if (message.message && message.message.content) {
+                    el.textContent = message.message.content; // Display only the content
+                } else {
+                    el.textContent = JSON.stringify(message, null, 2); // Fallback for other objects
+                }
+            } else {
+                el.textContent = message;
+            }
+
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        // Send Chat
+        document.getElementById('send-chat-btn').addEventListener('click', () => {
+            const prompt = document.getElementById('ai-prompt').value;
+            const selectedModel = document.getElementById('ai-model-select').value;
+            const outputEl = 'chat-output';
+
+            if (!prompt.trim()) {
+                displayOutput(outputEl, 'Error: Prompt cannot be empty.', true);
+                return;
+            }
+            if (!selectedModel) {
+                displayOutput(outputEl, 'Error: Please select a model.', true);
+                return;
+            }
+
+            displayOutput(outputEl, `Sending to ${selectedModel}...`);
+
+            puter.ai.chat(prompt, { model: selectedModel })
+                .then(response => {
+                    if (response && response.message && typeof response.message.content === 'string') {
+                        displayOutput(outputEl, response.message.content);
+                    } else {
+                        displayOutput(outputEl, JSON.stringify(response, null, 2));
+                    }
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error with ${selectedModel}: ${error.message || error}`, true);
+                });
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

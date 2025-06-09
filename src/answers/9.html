@@ -1,0 +1,342 @@
+<!-- q: Can I host a static website directly from a folder in my Puter FS? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hosting Static Websites from Puter FS</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ol, /* Added ol styling */
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"],
+        .try-it-area textarea { /* Added textarea styling */
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area textarea { /* Added textarea styling for dark mode */
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area textarea { min-height: 120px; resize: vertical; } /* Specific to textarea */
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px;
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .management-buttons button { /* For List/Delete buttons */
+            background-color: var(--answer-pre-bg-dark); /* Using a theme-neutral-ish color */
+            color: var(--answer-text-primary-dark);
+            margin-right: 10px;
+        }
+        html.dark-mode .management-buttons button {
+             background-color: var(--answer-pre-bg-light);
+             color: var(--answer-text-primary-light);
+        }
+        .options-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;}
+        .options-list li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Can I host a static website directly from a folder in my Puter FS?</h1>
+    <p>Yes, absolutely! Puter provides a powerful and straightforward way to host static websites (composed of HTML, CSS, JavaScript, images, and other assets) directly from a directory within your Puter File System. This is managed using the <code>puter.hosting</code> API, allowing you to publish content to a unique <code>*.puter.site</code> subdomain.</p>
+
+    <div class="tutorial-section">
+        <h2>1. The Hosting Process</h2>
+        <p>Hosting a static site involves these main steps:</p>
+        <ol>
+            <li><strong>Prepare Your Website Files:</strong>
+                <ul>
+                    <li>Create a directory in your Puter FS. You can do this programmatically using <code>puter.fs.mkdir()</code> or manually through the Puter interface.</li>
+                    <li>Place all your static website files (e.g., <code>index.html</code>, CSS files, JavaScript files, images) into this directory. Ensure you have an <code>index.html</code> file, as this is typically served as the default page for a directory.</li>
+                </ul>
+            </li>
+            <li><strong>Choose a Subdomain Name:</strong> Select a unique name for your site's subdomain. Your website will then be accessible at <code>your-chosen-subdomain.puter.site</code>. Subdomain names must be unique across all Puter users.</li>
+            <li><strong>Create the Hosting Link:</strong> Use <code>await puter.hosting.create(subdomainName, directoryPathInPuterFS)</code>. This command links your chosen subdomain to the specified directory in your Puter FS.</li>
+        </ol>
+        <p>Puter.js will handle authentication if required when you make these API calls.</p>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example: Hosting a Simple "Hello World" Site</h2>
+        <p>This example demonstrates creating a directory, adding an <code>index.html</code>, and then hosting it.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function createAndHostSimpleSite(subdomain, siteDirectoryPath, htmlContent) {
+    // Step 1: Create directory and write index.html
+    await puter.fs.mkdir(siteDirectoryPath, { createMissingParents: true });
+    await puter.fs.write(`${siteDirectoryPath}/index.html`, htmlContent);
+    console.log(`Files prepared in Puter FS at '${siteDirectoryPath}'.`);
+
+    // Step 2: Create the hosting entry
+    const siteObject = await puter.hosting.create(subdomain, siteDirectoryPath);
+    console.log('Site hosted successfully:', siteObject);
+    
+    const siteURL = `https://${siteObject.subdomain}.puter.site`;
+    return `Site hosted! Visit: <a href="${siteURL}" target="_blank" rel="noopener noreferrer">${siteURL}</a>`;
+}
+
+// --- How you might call it from your app ---
+//
+// const desiredSubdomain = 'my-awesome-demo-' + Date.now(); // Make it unique
+// const puterDir = 'public_sites/my_first_site';
+// const simpleHtml = `
+//   <!DOCTYPE html>
+//   <html><head><title>My Puter Site</title></head>
+//   <body><h1>Hello from Puter Hosting!</h1><p>This site is live!</p></body>
+//   </html>`;
+//
+// createAndHostSimpleSite(desiredSubdomain, puterDir, simpleHtml)
+//   .then(message => console.log(message))
+//   .catch(error => console.error('Error during hosting:', error.message));
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Create and Host a Site</h3>
+            <label for="host-subdomain">Desired Subdomain Name (e.g., <code>my-cool-project</code>):</label>
+            <input type="text" id="host-subdomain" placeholder="Unique subdomain name">
+            
+            <label for="host-dir-path">Puter FS Directory Path for Site (e.g., <code>websites/project_alpha</code>):</label>
+            <input type="text" id="host-dir-path" value="my_hosted_sites/demo_site_1">
+            
+            <label for="host-html-content">Content for <code>index.html</code>:</label>
+            <textarea id="host-html-content"><!DOCTYPE html>
+<html>
+<head><title>My Awesome Puter Site</title>
+<style>body{font-family: sans-serif; text-align: center; padding-top: 50px;}</style>
+</head>
+<body>
+  <h1>🚀 My Site is Live on Puter!</h1>
+  <p>This content was generated and hosted via Puter.js.</p>
+</body>
+</html></textarea>
+            
+            <button id="create-host-btn">Create Directory & Host Site</button>
+            <div class="output" id="hosting-status-output">Hosting status will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Managing Your Hosted Sites</h2>
+        <p>Puter.hosting API also provides methods to manage your sites:</p>
+        <ul class="options-list">
+            <li><code>puter.hosting.list()</code>: Returns a Promise resolving to an array of all your currently hosted subdomain objects.</li>
+            <li><code>puter.hosting.get(subdomainName)</code>: Retrieves detailed information about a specific hosted subdomain.</li>
+            <li><code>puter.hosting.update(subdomainName, newDirectoryPath)</code>: Allows you to change the Puter FS directory that an existing subdomain serves. If <code>newDirectoryPath</code> is omitted or <code>null</code>, it disconnects the subdomain from any directory (making it effectively offline or pointing to a default Puter page).</li>
+            <li><code>puter.hosting.delete(subdomainName)</code>: Removes the hosting entry for the specified subdomain. This makes the <code>*.puter.site</code> URL inactive but **does not delete the actual files** from your Puter FS directory.</li>
+        </ul>
+        <p>This makes it very flexible to update content, switch between site versions, or take sites offline.</p>
+        <div class="try-it-area management-buttons">
+             <h3>Try It Yourself: Manage Sites</h3>
+             <button id="list-sites-btn">List My Hosted Sites</button>
+             <label for="manage-subdomain-name" style="margin-top: 15px;">Subdomain to Get/Delete:</label>
+             <input type="text" id="manage-subdomain-name" placeholder="Enter subdomain name">
+             <button id="get-site-btn">Get Site Info</button>
+             <button id="delete-site-btn" style="background-color: #dc3545;">Delete This Site Hosting</button>
+             <div class="output" id="management-output">Management results will appear here...</div>
+        </div>
+    </div>
+
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false, allowHtml = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (allowHtml) {
+                el.innerHTML = message; // Use innerHTML if message contains HTML (like links)
+            } else if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+        
+        // Function from example to be used by the button
+        async function createAndHostSimpleSiteForDemo(subdomain, siteDirectoryPath, htmlContent, outputElId) {
+            if (!subdomain || !siteDirectoryPath || !htmlContent) {
+                displayOutput(outputElId, "Error: Subdomain, Directory Path, and HTML content are required.", true);
+                return;
+            }
+            displayOutput(outputElId, `Preparing site in '${siteDirectoryPath}' for subdomain '${subdomain}'...`);
+            try {
+                await puter.fs.mkdir(siteDirectoryPath, { createMissingParents: true });
+                displayOutput(outputElId, `Directory '${siteDirectoryPath}' ensured.\nWriting index.html...`);
+                await puter.fs.write(`${siteDirectoryPath}/index.html`, htmlContent);
+                displayOutput(outputElId, `index.html written to '${siteDirectoryPath}'.\nAttempting to create hosting for '${subdomain}'...`);
+
+                const siteObject = await puter.hosting.create(subdomain, siteDirectoryPath);
+                const siteURL = `https://${siteObject.subdomain}.puter.site`;
+                displayOutput(outputElId, `Site hosted successfully!\nSubdomain: ${siteObject.subdomain}\nDirectory: ${siteObject.root_dir ? siteObject.root_dir.path : 'N/A'}\nVisit: <a href="${siteURL}" target="_blank" rel="noopener noreferrer">${siteURL}</a>`, false, true); // Allow HTML for the link
+                console.log('Site hosted:', siteObject);
+            } catch (error) {
+                console.error('Error during hosting setup:', error);
+                displayOutput(outputElId, `Error: ${error.message || JSON.stringify(error)}`, true);
+            }
+        }
+
+        document.getElementById('create-host-btn').addEventListener('click', () => {
+            const subdomain = document.getElementById('host-subdomain').value.trim() || 
+                              ('demo-' + puter.randName().replace(/[^a-z0-9-]/gi, '').toLowerCase().substring(0,10) + Math.floor(Math.random()*100)); // Generate random if empty
+            document.getElementById('host-subdomain').value = subdomain; // Update UI with generated name if it was empty
+
+            const dirPath = document.getElementById('host-dir-path').value.trim();
+            const htmlContent = document.getElementById('host-html-content').value;
+            const outputElId = 'hosting-status-output';
+            createAndHostSimpleSiteForDemo(subdomain, dirPath, htmlContent, outputElId);
+        });
+
+        // Management Buttons
+        document.getElementById('list-sites-btn').addEventListener('click', async () => {
+            const outputElId = 'management-output';
+            displayOutput(outputElId, "Listing hosted sites...");
+            try {
+                const sites = await puter.hosting.list();
+                if (sites && sites.length > 0) {
+                    let siteInfo = "Your hosted sites:\n";
+                    sites.forEach(site => {
+                        siteInfo += `- ${site.subdomain}.puter.site (points to: ${site.root_dir ? site.root_dir.path : 'N/A'})\n`;
+                    });
+                    displayOutput(outputElId, siteInfo);
+                } else {
+                    displayOutput(outputElId, "No sites currently hosted.");
+                }
+            } catch (error) {
+                displayOutput(outputElId, `Error listing sites: ${error.message}`, true);
+            }
+        });
+
+        document.getElementById('get-site-btn').addEventListener('click', async () => {
+            const outputElId = 'management-output';
+            const subdomain = document.getElementById('manage-subdomain-name').value.trim();
+            if (!subdomain) {
+                displayOutput(outputElId, "Error: Please enter a subdomain name to get info.", true);
+                return;
+            }
+            displayOutput(outputElId, `Getting info for ${subdomain}...`);
+            try {
+                const site = await puter.hosting.get(subdomain);
+                displayOutput(outputElId, `Info for ${subdomain}:\n${JSON.stringify(site, null, 2)}`);
+            } catch (error) {
+                displayOutput(outputElId, `Error getting site info: ${error.message}`, true);
+            }
+        });
+        
+        document.getElementById('delete-site-btn').addEventListener('click', async () => {
+            const outputElId = 'management-output';
+            const subdomain = document.getElementById('manage-subdomain-name').value.trim();
+            if (!subdomain) {
+                displayOutput(outputElId, "Error: Please enter a subdomain name to delete.", true);
+                return;
+            }
+            if (!confirm(`Are you sure you want to delete the hosting for '${subdomain}.puter.site'? This will not delete the files in Puter FS.`)) {
+                displayOutput(outputElId, "Deletion cancelled.");
+                return;
+            }
+            displayOutput(outputElId, `Deleting hosting for ${subdomain}...`);
+            try {
+                await puter.hosting.delete(subdomain);
+                displayOutput(outputElId, `Hosting for ${subdomain}.puter.site has been deleted.`);
+            } catch (error) {
+                displayOutput(outputElId, `Error deleting site hosting: ${error.message}`, true);
+            }
+        });
+
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script> <!-- For HTML in textarea example -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

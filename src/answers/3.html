@@ -1,0 +1,248 @@
+<!-- q: How do I write a text file to Puter cloud storage? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Writing Text Files to Puter Storage</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() { /* ... same script ... */ })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area,
+        body.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3,
+        body.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label,
+        body.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"],
+        .try-it-area textarea {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area textarea,
+        body.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area textarea {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area textarea { min-height: 100px; resize: vertical; }
+        .try-it-area input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; }
+        .try-it-area .checkbox-group label { display: inline-block; font-weight: normal; margin-bottom: 10px;}
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+        }
+        html.dark-mode .try-it-area button,
+        body.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 35px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output,
+        body.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .options-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;}
+        .options-list li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>How do I write a text file to Puter cloud storage?</h1>
+    <p>The <code>puter.fs.write()</code> method is your tool for creating or updating text files in a user's Puter cloud storage. It's straightforward: provide a file path and the content you want to write. Puter.js handles the rest, including prompting for sign-in if needed.</p>
+    <p>By default, files are written to a sandboxed directory specific to your application (<code>~/AppData/YOUR_APP_ID/</code>), ensuring data organization and security.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Basic File Writing</h2>
+        <p>To write a simple text file, you need the desired file path (e.g., <code>'notes/shopping-list.txt'</code>) and the text content.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const filePath = 'myDocument.txt';
+const fileContent = 'Hello from Puter! This is my first file.';
+
+puter.fs.write(filePath, fileContent)
+    .then(fileObject => {
+        // fileObject contains details like name, path, size, etc.
+        console.log('File written successfully!', fileObject);
+        // Update your UI, e.g., display fileObject.path
+    })
+    .catch(error => {
+        console.error('Error writing file:', error);
+        // Display error.message in your UI
+    });
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Write a File</h3>
+            <label for="fs-file-path">File Path (e.g., notes/memo.txt):</label>
+            <input type="text" id="fs-file-path" value="myPuterNote.txt">
+
+            <label for="fs-file-content">File Content:</label>
+            <textarea id="fs-file-content">This is a test file written at {current_time}.</textarea>
+
+            <div class="checkbox-group">
+                <label title="If true, non-existent parent directories in the path will be created.">
+                    <input type="checkbox" id="fs-create-parents" checked> Create Missing Parent Directories
+                </label>
+                <br>
+                <label title="If true, an existing file will be overwritten. If false and dedupeName is also false, it will error if file exists.">
+                    <input type="checkbox" id="fs-overwrite" checked> Overwrite if Exists
+                </label>
+                <br>
+                <label title="If true and file exists (and overwrite is false), Puter appends a number to the filename (e.g., file (1).txt).">
+                    <input type="checkbox" id="fs-dedupe-name"> Deduplicate Name if Exists (requires Overwrite to be unchecked)
+                </label>
+            </div>
+
+            <button id="write-file-btn">Write File</button>
+            <div class="output" id="write-file-output">Output will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Understanding Write Options</h2>
+        <p>The <code>puter.fs.write()</code> method accepts an optional third argument, an <code>options</code> object, to control its behavior:</p>
+        <ul class="options-list">
+            <li><strong><code>createMissingParents</code> (boolean, default: <code>false</code>):</strong> If set to <code>true</code>, any directories in the provided path that don't exist will be automatically created. For example, if writing to <code>'archives/2024/report.txt'</code> and <code>archives/2024/</code> doesn't exist, it will be made.</li>
+            <li><strong><code>overwrite</code> (boolean, default: <code>true</code>):</strong> Determines what happens if a file already exists at the specified path.
+                <ul>
+                    <li>If <code>true</code> (default): The existing file is replaced with the new content.</li>
+                    <li>If <code>false</code>: The operation will fail with an error if the file exists, unless <code>dedupeName</code> is also <code>true</code>.</li>
+                </ul>
+            </li>
+            <li><strong><code>dedupeName</code> (boolean, default: <code>false</code>):</strong> If <code>true</code> AND <code>overwrite</code> is <code>false</code>, and a file with the same name exists, Puter will automatically rename the new file by appending a number (e.g., <code>filename (1).txt</code>, <code>filename (2).txt</code>, etc.) to prevent collision.</li>
+        </ul>
+        <p>Here's how you might use these options:</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const logEntry = new Date().toISOString() + ": System check initiated.\n";
+
+// Example: Create a log file, making parent dirs, and don't overwrite (let it error or dedupe)
+puter.fs.write('system-logs/today.log', logEntry, {
+    createMissingParents: true,
+    overwrite: false,
+    dedupeName: true // If 'today.log' exists, it might become 'today (1).log'
+})
+.then(file => console.log('Log written to:', file.path))
+.catch(error => console.error('Failed to write log:', error));
+        </code></pre>
+        <p><strong>Note on Appending:</strong> <code>puter.fs.write()</code> doesn't directly support appending to a file in a single call. To append, you would typically:
+            <ol>
+                <li>Read the existing file content: <code>puter.fs.read(path).then(blob => blob.text())</code>.</li>
+                <li>Append your new content to the existing string.</li>
+                <li>Write the combined content back: <code>puter.fs.write(path, newCombinedContent, { overwrite: true })</code>.</li>
+            </ol>
+        </p>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        document.getElementById('write-file-btn').addEventListener('click', () => {
+            const filePath = document.getElementById('fs-file-path').value;
+            let fileContent = document.getElementById('fs-file-content').value;
+            const createParents = document.getElementById('fs-create-parents').checked;
+            const overwrite = document.getElementById('fs-overwrite').checked;
+            const dedupeName = document.getElementById('fs-dedupe-name').checked;
+            const outputEl = 'write-file-output';
+
+            if (!filePath.trim()) {
+                displayOutput(outputEl, 'Error: File path cannot be empty.', true);
+                return;
+            }
+
+            fileContent = fileContent.replace('{current_time}', new Date().toLocaleTimeString());
+
+            const options = {
+                createMissingParents: createParents,
+                overwrite: overwrite
+            };
+
+            if (dedupeName) {
+                if (overwrite) {
+                     displayOutput(outputEl, 'Info: For dedupeName to work, "Overwrite if Exists" must be unchecked. Proceeding with overwrite enabled.', true);
+                     // No 'return' here, let it proceed but inform user
+                } else {
+                    options.dedupeName = true; // Only set if overwrite is false
+                }
+            }
+
+            displayOutput(outputEl, 'Writing file...');
+            puter.fs.write(filePath, fileContent, options)
+                .then(fileObject => {
+                    displayOutput(outputEl, `File written successfully!\nPath: ${fileObject.path}\nName: ${fileObject.name}\nSize: ${fileObject.size} bytes`);
+                })
+                .catch(error => {
+                    displayOutput(outputEl, `Error writing file: ${error.message || error}`, true);
+                });
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

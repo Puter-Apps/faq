@@ -1,0 +1,267 @@
+<!-- q: How do I create an app that opens specific file types by default? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>App File Type Associations in Puter</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, 
+        .tutorial-section > pre.code-example[class*="language-"], 
+        .tutorial-section > ul, 
+        .tutorial-section > ol { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em; color: var(--answer-text-secondary-light); }
+        html.dark-mode .try-it-area label { color: var(--answer-text-secondary-dark); }
+        .try-it-area input[type="text"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area input[type="text"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px; white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; max-height: 300px; overflow-y: auto; }
+        html.dark-mode .output { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+        .info-box, .warning-box { padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0; font-size: 0.9em; }
+        .info-box { background-color: var(--answer-pre-bg-light); border-left: 4px solid var(--answer-accent-light); }
+        html.dark-mode .info-box { background-color: var(--answer-pre-bg-dark); border-left-color: var(--answer-accent-dark); }
+        .warning-box { background-color: #fff3cd; border-left: 4px solid #ffeeba; color: #856404;}
+        html.dark-mode .warning-box { background-color: #332701; border-left-color: #66512c; color: #ffc107;}
+        .api-list li { margin-bottom: 5px;}
+    </style>
+</head>
+<body>
+    <h1>How do I create an app that opens specific file types by default?</h1>
+    <p>To enable your application to open specific file types by default within the Puter environment, you need to **declare** these associations when your app is registered or updated using the <code>filetypeAssociations</code> property. The Puter operating system then uses this declaration to allow users to set your app as the default handler through system settings.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Relevant Puter API Endpoints</h2>
+        <ul class="api-list">
+            <li><strong><code>puter.apps.create(options)</code>:</strong> Used to register a new application with Puter. The <code>options</code> object can include a <code>filetypeAssociations</code> array.
+                <ul><li><code>options.filetypeAssociations</code> (Array of Strings): Declares file types the app can handle (e.g., <code>[".txt", "image/png", ".directory"]</code>).</li></ul>
+            </li>
+            <li><strong><code>puter.apps.update(appName, attributes)</code>:</strong> Used to modify an existing app's registration. The <code>attributes</code> object can include a <code>filetypeAssociations</code> array to add or change supported file types.</li>
+            <li><strong><code>puter.ui.onLaunchedWithItems((items) => { /* handler */ })</code>:</strong> A callback in your app that Puter calls if your app is launched to open specific files. The <code>items</code> argument is an array of <code>FSItem</code> objects.</li>
+            <li><strong><code>puter.ui.onItemsOpened((items) => { /* handler */ })</code>:</strong> A callback in your app that Puter calls if files are opened with your app while it's already running.</li>
+            <li><strong><code>puter.apps.get(appName)</code> (for demo):</strong> Retrieves app details, allowing us to inspect the <code>filetypeAssociations</code> after creation/update.</li>
+            <li><strong><code>puter.apps.delete(appName)</code> (for demo cleanup):</strong> Deletes an app registration.</li>
+        </ul>
+        <p>The actual setting of an app as the *OS-level default* is a user action within Puter's settings, not directly controlled by these APIs. The APIs enable your app to be *eligible* for being set as default.</p>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Code Example: Declaring Associations</h2>
+        <p>This example shows how to create a new app registration (or update an existing one for demo purposes) with specified file type associations.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// This function will attempt to create an app, or update it if it exists
+// (useful for re-running this demo with the same base name).
+async function registerOrUpdateAppWithAssociations(baseAppName, appURL, associationsArray, outputLogFn) {
+    // For demo, create a somewhat unique name to avoid collisions across users if everyone uses 'MyDemoApp'
+    // In a real app, you'd use your app's actual registered name.
+    const appNameToRegister = `${baseAppName}-${puter.auth.isSignedIn() ? (await puter.auth.getUser()).username.slice(0,5) : 'guest'}-${Date.now().toString().slice(-4)}`;
+
+    outputLogFn(`Attempting to register/update app: '${appNameToRegister}'...`);
+    outputLogFn(`With associations: [${associationsArray.join(', ')}]`);
+
+    let appObject;
+    try {
+        // Try to get the app first. If it exists, we'll update.
+        // This part is more for robust demo re-runs. A new app would just call create.
+        try {
+            appObject = await puter.apps.get(appNameToRegister); 
+            outputLogFn(`App '${appNameToRegister}' already exists. Attempting to update its associations...`);
+            appObject = await puter.apps.update(appNameToRegister, {
+                indexURL: appURL, // Good to update URL too
+                title: `${baseAppName} (Updated)`,
+                description: `Handles: ${associationsArray.join(', ')}`,
+                filetypeAssociations: associationsArray
+            });
+            outputLogFn(`App '${appNameToRegister}' updated successfully.`);
+        } catch (error) {
+            // If 'get' failed (e.g., app not found), then create it.
+            if (error.message && error.message.toLowerCase().includes('not found')) {
+                outputLogFn(`App '${appNameToRegister}' not found. Creating new app registration...`);
+                appObject = await puter.apps.create({
+                    name: appNameToRegister,
+                    indexURL: appURL,
+                    title: baseAppName,
+                    description: `A demo app that handles: ${associationsArray.join(', ')}`,
+                    filetypeAssociations: associationsArray
+                });
+                outputLogFn(`App '${appNameToRegister}' created successfully.`);
+            } else {
+                // Different error during 'get' or 'update'
+                throw error; 
+            }
+        }
+        
+        outputLogFn(`\nFinal App Details for '${appObject.name}':`);
+        outputLogFn(`  UID: ${appObject.uid}`);
+        outputLogFn(`  Title: ${appObject.title}`);
+        outputLogFn(`  Index URL: ${appObject.index_url}`);
+        outputLogFn(`  File Associations: ${JSON.stringify(appObject.filetype_associations, null, 2)}`);
+        
+        return appObject; // Return the created/updated app object
+
+    } catch (error) {
+        console.error("Error during app registration/update:", error);
+        outputLogFn(`Error: ${error.message || JSON.stringify(error)}`, true);
+        if (error.message && (error.message.toLowerCase().includes("permission denied") || error.message.toLowerCase().includes("privileged"))) {
+            outputLogFn("Note: Modifying app registrations often requires specific permissions or running as a recognized Puter app, which might be restricted in this demo environment.", true);
+        }
+        throw error; // Re-throw for the caller
+    }
+}
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself: Declare App Associations</h2>
+        <div class="warning-box">
+            <strong>Demonstration Scope:</strong> This tool simulates the app registration process by calling <code>puter.apps.create()</code> or <code>puter.apps.update()</code>. This registers your app's capabilities with the current user's Puter account. It does **not** set the app as the OS-level default handler; that is a separate user action within Puter's system settings. Running these commands might be restricted in some environments (like a simple webpage not fully integrated as a Puter app).
+        </div>
+        <div class="try-it-area">
+            <h3>Register/Update Demo App</h3>
+            <label for="app-assoc-name-try">App Name (a unique suffix will be added for demo):</label>
+            <input type="text" id="app-assoc-name-try" value="MyFileViewer">
+
+            <label for="app-assoc-url-try">App Index URL (e.g., <code>https://your-app.com/viewer/</code>):</label>
+            <input type="text" id="app-assoc-url-try" value="https://example.puter.com/my-viewer-app/">
+            
+            <label for="app-assoc-types-try">File Associations (comma-separated, e.g., <code>.log, .customext, application/my-custom-type</code>):</label>
+            <input type="text" id="app-assoc-types-try" value=".log, .md, text/plain">
+            
+            <button id="register-app-btn-try">Declare Associations for Demo App</button>
+            <div class="output" id="app-reg-status-output-try">App registration status will appear here...</div>
+            <p style="font-size:0.8em; margin-top:10px;">(A unique suffix will be added to the app name for this demo to avoid conflicts. You can manage/delete demo apps via Puter's App Manager or API.)</p>
+        </div>
+    </div>
+
+    <script>
+        const appAssocNameInput = document.getElementById('app-assoc-name-try');
+        const appAssocUrlInput = document.getElementById('app-assoc-url-try');
+        const appAssocTypesInput = document.getElementById('app-assoc-types-try');
+        const registerAppBtn = document.getElementById('register-app-btn-try');
+        const appRegStatusOutput = document.getElementById('app-reg-status-output-try');
+
+        function logToAppRegOutput(message, isError = false) {
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            const line = document.createElement('div');
+            if (typeof message === 'object') {
+                line.textContent = JSON.stringify(message, null, 2);
+            } else {
+                line.textContent = message;
+            }
+            if (isError) {
+                line.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                line.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+            appRegStatusOutput.appendChild(line);
+            appRegStatusOutput.scrollTop = appRegStatusOutput.scrollHeight;
+        }
+        
+        // Function from example, adapted for the "Try It Yourself" UI
+        async function registerOrUpdateAppWithAssociationsForDemo(baseAppName, appURL, associationsArray) {
+            appRegStatusOutput.innerHTML = ''; // Clear previous logs
+            const usernamePart = puter.auth.isSignedIn() ? (await puter.auth.getUser()).username.replace(/[^a-zA-Z0-9]/g, '').slice(0,8) : 'guest';
+            const appNameToRegister = `${baseAppName.replace(/[^a-zA-Z0-9]/g, '')}-${usernamePart}`; // More consistent name for updates within user session
+
+            logToAppRegOutput(`Attempting to register/update app: '${appNameToRegister}'...`);
+            logToAppRegOutput(`With associations: [${associationsArray.join(', ')}]`);
+
+            let appObject;
+            try {
+                try {
+                    appObject = await puter.apps.get(appNameToRegister); 
+                    logToAppRegOutput(`App '${appNameToRegister}' already exists. Attempting to update...`);
+                    appObject = await puter.apps.update(appNameToRegister, {
+                        indexURL: appURL,
+                        title: `${baseAppName} (Updated)`,
+                        description: `Handles: ${associationsArray.join(', ')}`,
+                        filetypeAssociations: associationsArray
+                    });
+                    logToAppRegOutput(`App '${appNameToRegister}' updated successfully.`);
+                } catch (error) {
+                    if (error.message && error.message.toLowerCase().includes('not found')) {
+                        logToAppRegOutput(`App '${appNameToRegister}' not found. Creating new app registration...`);
+                        appObject = await puter.apps.create({
+                            name: appNameToRegister,
+                            indexURL: appURL,
+                            title: baseAppName,
+                            description: `A demo app that handles: ${associationsArray.join(', ')}`,
+                            filetypeAssociations: associationsArray
+                        });
+                        logToAppRegOutput(`App '${appNameToRegister}' created successfully.`);
+                    } else {
+                        throw error; 
+                    }
+                }
+                
+                logToAppRegOutput(`\nFinal App Details for '${appObject.name}':`);
+                logToAppRegOutput(`  UID: ${appObject.uid}`);
+                logToAppRegOutput(`  Title: ${appObject.title}`);
+                logToAppRegOutput(`  Index URL: ${appObject.index_url}`);
+                logToAppRegOutput(`  File Associations: ${JSON.stringify(appObject.filetype_associations, null, 2)}`);
+                
+                // Note: To actually *delete* this demo app, you'd call:
+                // await puter.apps.delete(appNameToRegister);
+                // logToAppRegOutput(`\n(For cleanup, you could run: puter.apps.delete('${appNameToRegister}');)`);
+
+            } catch (error) {
+                console.error("Error during app registration/update:", error);
+                logToAppRegOutput(`Error: ${error.message || JSON.stringify(error)}`, true);
+                if (error.message && (error.message.toLowerCase().includes("permission denied") || error.message.toLowerCase().includes("privileged") || (error.response && error.response.status === 403) )) {
+                    logToAppRegOutput("Note: Modifying app registrations often requires specific permissions or running as a recognized Puter app, which might be restricted in this demo environment.", true);
+                }
+            }
+        }
+
+        registerAppBtn.addEventListener('click', () => {
+            const baseAppName = appAssocNameInput.value.trim();
+            const appUrl = appAssocUrlInput.value.trim();
+            const associationsStr = appAssocTypesInput.value.trim();
+
+            if (!baseAppName || !appUrl || !associationsStr) {
+                logToAppRegOutput("Error: App Name, URL, and Associations are required.", true);
+                return;
+            }
+            const associationsArray = associationsStr.split(',')
+                .map(s => s.trim().toLowerCase()) // Standardize to lowercase
+                .filter(s => s.length > 0 && (s.startsWith('.') || s.includes('/'))); // Basic validation
+
+            if (associationsArray.length === 0) {
+                logToAppRegOutput("Error: Please provide at least one valid file association (e.g., '.txt' or 'text/plain').", true);
+                return;
+            }
+            
+            registerOrUpdateAppWithAssociationsForDemo(baseAppName, appUrl, associationsArray);
+        });
+
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

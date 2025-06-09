@@ -1,0 +1,279 @@
+<!-- q: How do I save a simple user preference using puter.kv? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Saving User Preferences with KV Store</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area select, /* Added select styling */
+        .try-it-area input[type="text"] { /* Keep consistent styling */
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            width: calc(100% - 26px); box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        html.dark-mode .try-it-area select, /* Added select styling for dark mode */
+        html.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area select, /* Added select styling for dark mode */
+        body.dark-mode .try-it-area input[type="text"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 5px; /* Added margin for button */
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 35px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .notes-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;}
+        .notes-list li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>How do I save a simple user preference using <code>puter.kv</code>?</h1>
+    <p>The <code>puter.kv</code> (Key-Value) store is an excellent tool for persisting simple user preferences within your application, such as theme choices, notification settings, or UI layout options. Puter ensures that each application has its own isolated KV store for every user, maintaining data privacy and organization.</p>
+    <p>When your application attempts to use <code>puter.kv</code> methods, Puter.js will automatically handle user authentication if needed.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Core KV Store Methods</h2>
+        <p>The primary methods you'll use for managing preferences are:</p>
+        <ul>
+            <li><code>puter.kv.set(key, value)</code>: Use this to save a preference. The <code>key</code> is a string identifier (e.g., <code>'userTheme'</code>), and the <code>value</code> can be a string (like <code>'dark'</code>), a number, or a boolean.</li>
+            <li><code>puter.kv.get(key)</code>: Use this to retrieve a previously saved preference. It returns the stored value or <code>null</code> if the key isn't found.</li>
+            <li><code>puter.kv.del(key)</code>: Use this to remove a preference if, for example, the user resets their settings.</li>
+        </ul>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Example: Saving and Loading a Theme Preference</h2>
+        <p>Let's imagine your application allows users to choose a theme (e.g., 'light', 'dark', or 'system default').</p>
+
+        <h3>Saving the Preference:</h3>
+        <p>When the user makes a selection, you save it using <code>puter.kv.set()</code>.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const userSelectedTheme = 'dark'; // This would come from user input
+const themeKey = 'appDisplayTheme';
+
+puter.kv.set(themeKey, userSelectedTheme)
+    .then(() => {
+        console.log('Theme preference saved successfully:', userSelectedTheme);
+        // Optionally, update UI to confirm
+    })
+    .catch(error => {
+        console.error('Failed to save theme preference:', error);
+        // Inform user of the error
+    });
+        </code></pre>
+
+        <h3>Loading the Preference:</h3>
+        <p>When your application loads (or this answer page loads), you can retrieve the saved preference using <code>puter.kv.get()</code>.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+const themeKey = 'appDisplayTheme';
+
+puter.kv.get(themeKey)
+    .then(savedTheme => {
+        if (savedTheme !== null) {
+            console.log('Retrieved theme preference:', savedTheme);
+            // Apply this 'savedTheme' to your application's UI
+            // e.g., document.body.setAttribute('data-theme', savedTheme);
+        } else {
+            console.log('No theme preference found. Using default settings.');
+            // Apply a default theme
+        }
+    })
+    .catch(error => {
+        console.error('Failed to retrieve theme preference:', error);
+        // Handle error, perhaps by applying a default theme
+    });
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Manage Theme Preference</h3>
+            <label for="theme-selector">Select Your Preferred Theme:</label>
+            <select id="theme-selector">
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+                <option value="system">System Default</option>
+            </select>
+            <button id="save-preference-btn">Save Preference</button>
+            <button id="load-preference-btn" style="margin-left: 10px;">Load Current Preference</button>
+            <button id="delete-preference-btn" style="margin-left: 10px; background-color: var(--answer-pre-border-dark); color: var(--answer-text-primary-dark);">Delete Preference</button>
+            <div class="output" id="preference-output">Preference status will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Important Considerations</h2>
+        <ul class="notes-list">
+            <li><strong>Key Size Limit:</strong> Keys in <code>puter.kv</code> can be up to 1 KB.</li>
+            <li><strong>Value Size Limit:</strong> Values can be up to 400 KB. This is generally ample for preferences.</li>
+            <li><strong>Storing Objects:</strong> If you need to store a more complex preference (like an object with multiple settings), convert it to a JSON string before saving: <code>JSON.stringify(myPreferenceObject)</code>. When retrieving, parse it back: <code>JSON.parse(retrievedStringValue)</code>.</li>
+            <li><strong>Error Handling:</strong> Always include <code>.catch()</code> blocks to gracefully handle potential issues during set, get, or delete operations (e.g., network issues, storage limits).</li>
+        </ul>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        const PREFERENCE_KEY = 'tutorialAppThemePreference'; // Use a consistent key
+        const themeSelectorEl = document.getElementById('theme-selector');
+        const outputElId = 'preference-output';
+
+        // Save Preference
+        document.getElementById('save-preference-btn').addEventListener('click', async () => {
+            const selectedTheme = themeSelectorEl.value;
+            displayOutput(outputElId, 'Saving preference...');
+            try {
+                await puter.kv.set(PREFERENCE_KEY, selectedTheme);
+                displayOutput(outputElId, `Preference '${selectedTheme}' saved successfully for key '${PREFERENCE_KEY}'.`);
+                console.log('Preference saved:', selectedTheme);
+            } catch (error) {
+                displayOutput(outputElId, `Error saving preference: ${error.message || error}`, true);
+                console.error("Error saving KV:", error);
+            }
+        });
+
+        // Load Preference
+        async function loadCurrentPreference() {
+            displayOutput(outputElId, 'Loading preference...');
+            try {
+                const savedValue = await puter.kv.get(PREFERENCE_KEY);
+                if (savedValue !== null) {
+                    themeSelectorEl.value = savedValue; // Update dropdown to reflect saved value
+                    displayOutput(outputElId, `Loaded preference for key '${PREFERENCE_KEY}': ${savedValue}`);
+                } else {
+                    displayOutput(outputElId, `No preference found for key '${PREFERENCE_KEY}'. Select and save one.`);
+                }
+            } catch (error) {
+                displayOutput(outputElId, `Error loading preference: ${error.message || error}`, true);
+                console.error("Error loading KV:", error);
+            }
+        }
+        document.getElementById('load-preference-btn').addEventListener('click', loadCurrentPreference);
+
+
+        // Delete Preference
+        document.getElementById('delete-preference-btn').addEventListener('click', async () => {
+            displayOutput(outputElId, `Deleting preference for key '${PREFERENCE_KEY}'...`);
+            try {
+                await puter.kv.del(PREFERENCE_KEY);
+                displayOutput(outputElId, `Preference for key '${PREFERENCE_KEY}' deleted successfully.`);
+                console.log('Preference deleted');
+                // Optionally reset the selector to a default
+                // themeSelectorEl.value = 'light'; 
+            } catch (error) {
+                displayOutput(outputElId, `Error deleting preference: ${error.message || error}`, true);
+                console.error("Error deleting KV:", error);
+            }
+        });
+
+
+        // Initial load of preference when the page/iframe is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCurrentPreference();
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

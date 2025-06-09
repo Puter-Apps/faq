@@ -1,0 +1,287 @@
+<!-- q: How can I generate unique file/folder names and handle potential collisions in Puter FS? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Unique Names & Collision Handling in Puter FS</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ol, /* Added ol styling */
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"],
+        .try-it-area input[type="checkbox"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        .try-it-area input[type="text"] { width: calc(100% - 26px); }
+
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area input[type="checkbox"],
+        body.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area input[type="checkbox"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; }
+        .try-it-area .checkbox-group label { display: inline-block; font-weight: normal; margin-bottom: 10px;}
+
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px; margin-right: 10px; /* Added margin-right */
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .options-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;} /* For strategy list */
+        .options-list li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>How can I generate unique file/folder names and handle potential collisions in Puter FS?</h1>
+    <p>When working with file systems, ensuring unique names for files and directories, or gracefully handling cases where names might collide, is crucial. Puter.js provides utilities and options within its File System (FS) API to address these needs.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Generating Unique Random Names with <code>puter.randName()</code></h2>
+        <p>For scenarios where you need a unique, human-readable name (e.g., for temporary directories, session IDs, or default project names), <code>puter.randName()</code> is very useful. It generates names like "adjective-noun-number".</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// Generate a default random name
+const name1 = puter.randName();
+console.log("Default random name:", name1); // e.g., "clever-tree-1234"
+
+// Generate a random name with a custom separator
+const name2 = puter.randName('_');
+console.log("Random name with underscore:", name2); // e.g., "happy_river_5678"
+
+// You can combine it with other unique identifiers for more robustness
+const uniqueSessionDir = `session_${puter.randName()}_${Date.now()}`;
+console.log("More unique name:", uniqueSessionDir);
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Generate Random Names</h3>
+            <button id="generate-rand-btn">Generate Names</button>
+            <div class="output" id="rand-name-output">Generated random names will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Automatic Deduplication with <code>dedupeName</code> Option</h2>
+        <p>When creating files (<code>puter.fs.write()</code>) or directories (<code>puter.fs.mkdir()</code>), if you're concerned that a user-provided name (or a fixed name) might already exist, you can use the <code>dedupeName: true</code> option. If a conflict occurs, Puter.js will automatically append a number to the name to make it unique (e.g., <code>document.txt</code> might become <code>document (1).txt</code>).</p>
+        <p><strong>Important for <code>puter.fs.write</code>:</strong> For <code>dedupeName: true</code> to effectively prevent overwriting and instead create a new numbered file, the <code>overwrite</code> option must be set to <code>false</code>. If <code>overwrite</code> is <code>true</code> (which is its default), it will simply replace the existing file, and <code>dedupeName</code> will not be triggered for that exact name match.</p>
+
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function createFileWithDeduplication(baseName, content, attemptNumber) {
+    try {
+        const fileObject = await puter.fs.write(baseName, `${content} - Attempt ${attemptNumber}`, {
+            dedupeName: true,
+            overwrite: false, // Crucial for dedupeName to work on existing names
+            createMissingParents: true // Good practice
+        });
+        console.log(`File created/deduplicated: ${fileObject.name} at ${fileObject.path}`);
+        return `Created/Deduplicated: ${fileObject.name}`;
+    } catch (error) {
+        console.error(`Error on attempt ${attemptNumber}:`, error);
+        return `Error on attempt ${attemptNumber}: ${error.message}`;
+    }
+}
+
+// --- How you might call it repeatedly to see deduplication ---
+//
+// const testBaseName = 'my_reports/daily_log.txt';
+// createFileWithDeduplication(testBaseName, "Initial log data", 1);
+// createFileWithDeduplication(testBaseName, "Updated log data", 2); // Should become daily_log (1).txt
+// createFileWithDeduplication(testBaseName, "Final log data", 3);   // Should become daily_log (2).txt
+        </code></pre>
+        <div class="try-it-area">
+            <h3>Try It Yourself: Test File Deduplication</h3>
+            <label for="dedupe-base-name">Base File Name (e.g., <code>notes/important.txt</code>):</label>
+            <input type="text" id="dedupe-base-name" value="my_app_files/dedupe_test.txt">
+            <p style="font-size: 0.85em; margin-top: 0;">Click multiple times to see deduplication. Ensure "Overwrite" is unchecked.</p>
+            
+            <div class="checkbox-group">
+                 <label title="If checked, will overwrite 'dedupe_test.txt' instead of creating 'dedupe_test (1).txt', etc. Uncheck to see dedupeName work.">
+                    <input type="checkbox" id="dedupe-overwrite-opt"> Overwrite if Exists (uncheck for dedupe)
+                </label>
+            </div>
+
+            <button id="dedupe-create-btn">Create File (with Dedupe)</button>
+            <div class="output" id="dedupe-output">File creation status will appear here...</div>
+        </div>
+    </div>
+    
+    <div class="tutorial-section">
+        <h2>3. General Strategies for Uniqueness</h2>
+        <ol class="options-list">
+            <li><strong>For guaranteed unique, often temporary, items:</strong> Combine <code>puter.randName()</code> with a timestamp (<code>Date.now()</code>) or a client-generated UUID. Example: <code>const uniqueDir = `temp_data/${puter.randName()}-${Date.now()}`;</code></li>
+            <li><strong>For user-provided names:</strong> Always consider using <code>dedupeName: true</code> (and <code>overwrite: false</code> for <code>fs.write</code>) when creating files or directories. It's good practice to inform the user if the name they chose was modified due to deduplication (e.g., "Your file was saved as 'report (1).txt' because 'report.txt' already existed.").</li>
+            <li><strong>Proactive Check (<code>puter.fs.stat</code>):</strong> Before attempting to write or create, you can use <code>await puter.fs.stat(path)</code>.
+                <ul>
+                    <li>If it resolves, the item exists. You can then prompt the user: "File 'X' already exists. Overwrite, Rename, or Cancel?"</li>
+                    <li>If it rejects (typically with a "not found" error), the path is available.</li>
+                </ul>
+            </li>
+        </ol>
+        <p>Choosing the right strategy depends on whether the name needs to be predictable by the user or simply unique for internal application purposes.</p>
+    </div>
+
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false, append = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            
+            let currentText = append ? (el.textContent + "\n") : "";
+            if (typeof message === 'object') {
+                el.textContent = currentText + JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = currentText + message;
+            }
+
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        // For puter.randName() demo
+        document.getElementById('generate-rand-btn').addEventListener('click', () => {
+            const outputElId = 'rand-name-output';
+            displayOutput(outputElId, ""); // Clear previous
+            const name1 = puter.randName();
+            const name2 = puter.randName('_');
+            const name3 = `project-${puter.randName('-')}-${Date.now().toString().slice(-5)}`;
+            displayOutput(outputElId, `Default: ${name1}`, false, true);
+            displayOutput(outputElId, `With '_': ${name2}`, false, true);
+            displayOutput(outputElId, `Combined: ${name3}`, false, true);
+        });
+
+        // For Deduplication Demo
+        let dedupeAttemptCounter = 0;
+        document.getElementById('dedupe-create-btn').addEventListener('click', async () => {
+            const outputElId = 'dedupe-output';
+            const baseName = document.getElementById('dedupe-base-name').value;
+            const shouldOverwrite = document.getElementById('dedupe-overwrite-opt').checked;
+            
+            if (!baseName) {
+                displayOutput(outputElId, "Error: Base file name cannot be empty.", true);
+                return;
+            }
+            
+            dedupeAttemptCounter++;
+            const content = `This is content for attempt #${dedupeAttemptCounter} at ${new Date().toLocaleTimeString()}`;
+            displayOutput(outputElId, `Attempt #${dedupeAttemptCounter}: Creating '${baseName}' with content "${content.substring(0,30)}..."`, false, dedupeAttemptCounter > 1);
+
+            try {
+                const options = {
+                    dedupeName: true, 
+                    overwrite: shouldOverwrite, // User controls this for the demo
+                    createMissingParents: true
+                };
+                if (shouldOverwrite) {
+                    // If overwrite is true, dedupeName won't trigger for the exact baseName if it exists.
+                    // It would only trigger if overwrite was false and the baseName existed.
+                    // To truly test dedupeName, overwrite should be false.
+                    displayOutput(outputElId, "Note: 'Overwrite' is checked. Deduplication for the exact base name might not occur; it will just overwrite.", false, true);
+                }
+
+
+                const fileObject = await puter.fs.write(baseName, content, options);
+                displayOutput(outputElId, `  Success: File '${fileObject.name}' created/updated at '${fileObject.path}'`, false, true);
+                console.log(`File created/deduplicated: ${fileObject.name} at ${fileObject.path}`);
+            } catch (error) {
+                displayOutput(outputElId, `  Error: ${error.message || JSON.stringify(error)}`, true, true);
+                console.error(`Error on attempt ${dedupeAttemptCounter}:`, error);
+            }
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

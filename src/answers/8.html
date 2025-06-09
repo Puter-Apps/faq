@@ -1,0 +1,294 @@
+<!-- q: How can I upload a user's local file to Puter? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Uploading Local Files to Puter FS</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ol, /* Added ol styling */
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="file"], /* Styling for file input */
+        .try-it-area input[type="text"],
+        .try-it-area input[type="checkbox"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        .try-it-area input[type="file"], /* File input takes full width */
+        .try-it-area input[type="text"] {  width: calc(100% - 26px); }
+
+        html.dark-mode .try-it-area input[type="file"], /* Dark mode for file input */
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area input[type="checkbox"],
+        body.dark-mode .try-it-area input[type="file"], /* Dark mode for file input */
+        body.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area input[type="checkbox"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; }
+        .try-it-area .checkbox-group label { display: inline-block; font-weight: normal; margin-bottom: 10px;}
+
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px;
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .options-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;}
+        .options-list li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1>How can I upload a user's local file to Puter?</h1>
+    <p>Uploading files from a user's local machine to their Puter cloud storage is a common requirement. Puter.js facilitates this with the <code>puter.fs.upload()</code> method, which works in conjunction with a standard HTML file input element (<code><input type="file"></code>).</p>
+    <p>When a user selects files via the input, your application can pass the resulting <code>FileList</code> object directly to <code>puter.fs.upload()</code>.</p>
+
+    <div class="tutorial-section">
+        <h2>1. The Upload Process</h2>
+        <p>The typical steps to implement file uploading are:</p>
+        <ol>
+            <li><strong>HTML File Input:</strong> Add an <code><input type="file"></code> element to your HTML. You can add the <code>multiple</code> attribute to allow users to select more than one file at a time.</li>
+            <li><strong>Access Selected Files:</strong> When the user selects files, the <code>change</code> event on the file input will fire. The selected files are available in the <code>event.target.files</code> property (or directly via <code>fileInputElement.files</code> if you get a reference to the input element). This is a <code>FileList</code> object.</li>
+            <li><strong>Call <code>puter.fs.upload()</code>:</strong> Pass the <code>FileList</code> object to <code>puter.fs.upload()</code>. You can also provide an optional destination directory path on Puter and an options object.</li>
+            <li><strong>Handle Results:</strong> <code>puter.fs.upload()</code> returns a Promise that resolves to an array of <code>FSItem</code> objects, one for each successfully uploaded file.</li>
+        </ol>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Basic Upload Example</h2>
+        <p>Here's how you can set up a simple file upload interface:</p>
+        <pre class="code-example line-numbers"><code class="language-markup">
+<!-- HTML Part -->
+<label for="file-uploader">Choose files to upload:</label>
+<input type="file" id="file-uploader" multiple>
+<button id="upload-button">Upload Selected Files</button>
+<div id="upload-feedback"></div>
+        </code></pre>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+// JavaScript Part
+const fileInputElement = document.getElementById('file-uploader');
+const uploadButton = document.getElementById('upload-button');
+const feedbackDiv = document.getElementById('upload-feedback');
+
+uploadButton.addEventListener('click', () => {
+    if (fileInputElement.files.length === 0) {
+        feedbackDiv.textContent = 'Please select one or more files first.';
+        return;
+    }
+
+    feedbackDiv.textContent = `Uploading ${fileInputElement.files.length} file(s)...`;
+
+    // Optional: Specify a target directory on Puter.
+    // If omitted, files go to the app's root data directory.
+    const targetPuterDirectory = 'my_uploads/';
+
+    puter.fs.upload(fileInputElement.files, targetPuterDirectory, {
+        createMissingParents: true, // Create 'my_uploads/' if it doesn't exist
+        dedupeName: true           // Avoid overwriting by renaming (e.g., file (1).txt)
+    })
+    .then(uploadedFileItems => {
+        let successMessage = `Successfully uploaded ${uploadedFileItems.length} file(s):\n`;
+        uploadedFileItems.forEach(item => {
+            successMessage += `- ${item.name} (saved to: ${item.path})\n`;
+        });
+        feedbackDiv.textContent = successMessage;
+        console.log('Upload successful:', uploadedFileItems);
+        fileInputElement.value = ''; // Clear the file input for next selection
+    })
+    .catch(error => {
+        feedbackDiv.textContent = 'Upload failed: ' + error.message;
+        console.error('Upload error:', error);
+    });
+});
+        </code></pre>
+
+        <div class="try-it-area">
+            <h3>Try It Yourself: Upload Files</h3>
+            <label for="local-file-input-try">Select local file(s):</label>
+            <input type="file" id="local-file-input-try" multiple>
+
+            <label for="puter-target-dir-try">Target Puter Directory (optional, e.g., <code>user_files/images/</code>):</label>
+            <input type="text" id="puter-target-dir-try" placeholder="App's root (if empty)">
+            
+            <div class="checkbox-group" style="margin-top:10px;">
+                <label title="Create parent directories if they don't exist in the target path.">
+                    <input type="checkbox" id="upload-create-parents-try" checked> Create Missing Parents
+                </label>
+                <br>
+                <label title="If a file with the same name exists, append a number to the new file's name.">
+                    <input type="checkbox" id="upload-dedupe-name-try" checked> Deduplicate Name
+                </label>
+            </div>
+
+            <button id="upload-files-btn-try">Upload to Puter</button>
+            <div class="output" id="upload-status-output">Upload status will appear here...</div>
+        </div>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Understanding <code>puter.fs.upload()</code> Parameters</h2>
+        <p><code>puter.fs.upload(items, dirPath, options)</code></p>
+        <ul class="options-list">
+            <li><strong><code>items</code> (Array | FileList | InputFileList, required):</strong> The files to upload. Typically, this is the <code>FileList</code> object from an <code><input type="file"></code> element. You can also pass an array of <code>File</code> or <code>Blob</code> objects.</li>
+            <li><strong><code>dirPath</code> (String, optional):</strong> The target directory path on the user's Puter storage where the files should be uploaded. If not provided, files are uploaded to the root of your application's sandboxed data directory (e.g., <code>~/AppData/YOUR_APP_ID/</code>). If you specify a path like <code>'my_folder/sub_folder/'</code>, it will be relative to this app data directory.</li>
+            <li><strong><code>options</code> (Object, optional):</strong> An object to configure the upload process:
+                <ul>
+                    <li><code>createMissingParents</code> (boolean, default: <code>false</code>): If <code>dirPath</code> is specified and its parent directories do not exist, setting this to <code>true</code> will create them.</li>
+                    <li><code>dedupeName</code> (boolean, default: <code>false</code>): If <code>true</code> and a file with the same name already exists in the target directory, Puter will automatically append a number to the uploaded file's name (e.g., <code>image (1).png</code>) instead of overwriting or erroring.</li>
+                    <li><code>overwrite</code> (boolean, default: <code>true</code> unless <code>dedupeName</code> is true then it's effectively false for name collision cases): If <code>true</code> and <code>dedupeName</code> is <code>false</code>, an existing file at the target path with the same name will be overwritten. If <code>dedupeName</code> is <code>true</code>, <code>overwrite</code> behavior for exact name matches is superseded by the deduplication logic.</li>
+                </ul>
+            </li>
+        </ul>
+        <p>Using <code>dedupeName: true</code> is often a good default for uploads to prevent accidental data loss and provide a smoother user experience.</p>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        document.getElementById('upload-files-btn-try').addEventListener('click', () => {
+            const fileInput = document.getElementById('local-file-input-try');
+            const targetDirInput = document.getElementById('puter-target-dir-try').value.trim();
+            const createParents = document.getElementById('upload-create-parents-try').checked;
+            const dedupeName = document.getElementById('upload-dedupe-name-try').checked;
+            const outputElId = 'upload-status-output';
+
+            if (fileInput.files.length === 0) {
+                displayOutput(outputElId, 'Error: Please select at least one file to upload.', true);
+                return;
+            }
+
+            displayOutput(outputElId, `Uploading ${fileInput.files.length} file(s)...`);
+
+            const options = {
+                createMissingParents: createParents,
+                dedupeName: dedupeName
+                // Overwrite is implicitly handled; if dedupeName is true, it won't overwrite on collision.
+                // If dedupeName is false, default overwrite is true.
+            };
+
+            // dirPath is optional; pass undefined if empty string, so Puter uses default app dir.
+            const dirPathForUpload = targetDirInput ? targetDirInput : undefined;
+
+            puter.fs.upload(fileInput.files, dirPathForUpload, options)
+                .then(uploadedFileObjects => {
+                    let message = `Successfully uploaded ${uploadedFileObjects.length} file(s):\n`;
+                    uploadedFileObjects.forEach(fileObj => {
+                        message += `- ${fileObj.name} (saved to: ${fileObj.path})\n`;
+                    });
+                    displayOutput(outputElId, message);
+                    console.log('Upload complete:', uploadedFileObjects);
+                    fileInput.value = ''; // Clear the file input
+                })
+                .catch(error => {
+                    displayOutput(outputElId, `Upload error: ${error.message || error}`, true);
+                    console.error('Upload error:', error);
+                });
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script> <!-- For HTML example -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

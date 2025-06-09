@@ -1,0 +1,298 @@
+<!-- q: How can I show a file picker for users to select files from their Puter storage? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Using Puter File Picker (showOpenFilePicker)</title>
+    <link rel="stylesheet" href="answer-styles.css">
+
+    <!-- Prism.js Theme CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <!-- Prism.js Line Numbers Plugin CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+
+    <script>
+      // IIFE for FOUC/FOUWT prevention
+      (function() {
+        let isDark = false;
+        try {
+          if (window.parent && window.parent.document.body.classList.contains('dark-mode')) {
+            isDark = true;
+          }
+        } catch (e) {
+          try {
+            const savedTheme = localStorage.getItem('faq_theme');
+            if (savedTheme === 'dark') {
+              isDark = true;
+            } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          } catch (lsError) {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              isDark = true;
+            }
+          }
+        }
+        if (isDark) {
+          document.documentElement.classList.add('dark-mode');
+        }
+      })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        /* Page-specific styles for .try-it-area etc. */
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p,
+        .tutorial-section > pre.code-example[class*="language-"],
+        .tutorial-section > ul { margin-bottom: 15px; }
+
+        .try-it-area {
+            margin-top: 20px; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            background-color: #f0f4f8; border: 1px solid #d1d9e0;
+        }
+        html.dark-mode .try-it-area {
+            background-color: #2c323a; border-color: #3e454e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .try-it-area h3 {
+            font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px;
+            color: var(--answer-text-primary-light);
+            border-bottom: 1px solid var(--answer-border-light);
+        }
+        html.dark-mode .try-it-area h3 {
+            color: var(--answer-text-primary-dark);
+            border-bottom-color: var(--answer-border-dark);
+        }
+        .try-it-area label {
+            display: block; margin-bottom: 6px; font-weight: 500; font-size: 0.9em;
+            color: var(--answer-text-secondary-light);
+        }
+        html.dark-mode .try-it-area label {
+            color: var(--answer-text-secondary-dark);
+        }
+        .try-it-area input[type="text"], /* For accept filter input */
+        .try-it-area input[type="checkbox"] {
+            padding: 9px 12px; margin-bottom: 12px; border-radius: 5px;
+            box-sizing: border-box; font-size: 0.95em;
+            background-color: var(--answer-bg-light);
+            color: var(--answer-text-primary-light);
+            border: 1px solid #b0bac3;
+        }
+        .try-it-area input[type="text"] {  width: calc(100% - 26px); }
+        html.dark-mode .try-it-area input[type="text"],
+        html.dark-mode .try-it-area input[type="checkbox"],
+        body.dark-mode .try-it-area input[type="text"],
+        body.dark-mode .try-it-area input[type="checkbox"] {
+            background-color: #383f47;
+            color: var(--answer-text-primary-dark);
+            border-color: #505861;
+        }
+        .try-it-area input[type="checkbox"] { width: auto; margin-right: 5px; vertical-align: middle; }
+        .try-it-area .checkbox-group label { display: inline-block; font-weight: normal; margin-bottom: 10px;}
+
+
+        .try-it-area button {
+            padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s;
+            background-color: var(--answer-accent-light); color: white;
+            margin-top: 10px; /* Spacing for button */
+        }
+        html.dark-mode .try-it-area button {
+            background-color: var(--answer-accent-dark); color: #1c1e22;
+        }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output {
+            margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 70px;
+            white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5;
+            background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0;
+        }
+        html.dark-mode .output {
+            background-color: #22272e;
+            color: var(--answer-text-secondary-dark);
+            border-color: #404852;
+        }
+        .options-list { list-style-type: disc; padding-left: 20px; margin-left: 20px;}
+        .options-list li { margin-bottom: 8px; }
+        .options-list ul { margin-top: 5px; } /* Indent sub-lists */
+    </style>
+</head>
+<body>
+    <h1>How can I show a file picker for users to select files from their Puter storage?</h1>
+    <p>Puter.js provides a convenient way for users to select files from their Puter cloud storage directly within your application using the <code>puter.ui.showOpenFilePicker()</code> method. This method presents a native-feeling Puter dialog, enhancing the user experience.</p>
+    <p>When called, it returns a Promise that resolves with the selected file(s) as <code>FSItem</code> objects, or <code>null</code> if the user cancels the dialog. Puter.js handles authentication if the user isn't already signed in.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Basic Single File Selection</h2>
+        <p>To allow the user to select a single file, call <code>puter.ui.showOpenFilePicker()</code> without any arguments.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.ui.showOpenFilePicker()
+    .then(selectedItem => {
+        // selectedItem is a single FSItem object, or null if cancelled.
+        if (selectedItem) {
+            console.log('File selected:', selectedItem.name);
+            console.log('Full path:', selectedItem.path);
+            console.log('Size:', selectedItem.size + ' bytes');
+            // You can now, for example, read its content:
+            // selectedItem.read().then(blob => blob.text()).then(text => console.log(text));
+        } else {
+            console.log('File selection was cancelled by the user.');
+        }
+    })
+    .catch(error => {
+        console.error('Error displaying file picker:', error);
+        // Handle errors, e.g., if the dialog couldn't be shown.
+    });
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Customizing the File Picker with Options</h2>
+        <p>The <code>showOpenFilePicker()</code> method accepts an optional options object to tailor its behavior:</p>
+        <ul class="options-list">
+            <li>
+                <strong><code>multiple</code> (boolean):</strong>
+                <ul>
+                    <li>Default: <code>false</code> (user can select only one file).</li>
+                    <li>Set to <code>true</code> to allow the user to select multiple files. The promise will then resolve to an array of <code>FSItem</code> objects (or an empty array if no files are selected but the dialog is confirmed, or <code>null</code> if cancelled).</li>
+                </ul>
+            </li>
+            <li>
+                <strong><code>accept</code> (String or Array of Strings):</strong>
+                <ul>
+                    <li>Default: <code>'*/*'</code> (accepts all file types).</li>
+                    <li>Use this to filter the displayed files. You can provide:
+                        <ul>
+                            <li>A MIME type string: e.g., <code>'image/*'</code> (for all images), <code>'application/pdf'</code> (for PDF files).</li>
+                            <li>A file extension: e.g., <code>'.txt'</code>, <code>'.md'</code>.
+                            <li>An array of MIME types and/or extensions: e.g., <code>['image/jpeg', '.png', 'application/json']</code>.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        
+        <h3>Example: Selecting Multiple Text or Markdown Files</h3>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+puter.ui.showOpenFilePicker({
+    multiple: true,
+    accept: ['.txt', '.md', 'text/plain'] // Accepts .txt, .md, and generic text files
+})
+.then(selectedItemsArray => {
+    if (selectedItemsArray && selectedItemsArray.length > 0) {
+        console.log(`Selected ${selectedItemsArray.length} files:`);
+        selectedItemsArray.forEach(item => {
+            console.log(`- ${item.name} (Path: ${item.path})`);
+        });
+    } else {
+        console.log('No files selected or selection cancelled.');
+    }
+})
+.catch(error => console.error('Error:', error));
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>3. Try It Yourself: Experiment with the File Picker</h2>
+        <div class="try-it-area">
+            <h3>Configure and Open File Picker</h3>
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="picker-multiple"> Allow multiple file selection
+                </label>
+            </div>
+            <label for="picker-accept">Accept Filter (e.g., <code>image/*</code>, <code>.txt,.md</code>, or leave empty for all):</label>
+            <input type="text" id="picker-accept" placeholder="*/* (all files)">
+            
+            <button id="open-picker-btn">Open File Picker</button>
+            <div class="output" id="picker-output">Selected file information will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        // Helper to display messages
+        function displayOutput(elementId, message, isError = false) {
+            const el = document.getElementById(elementId);
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        function formatFileItemsForDisplay(items) {
+            if (!items) return "Selection cancelled or no items.";
+            
+            const itemsArray = Array.isArray(items) ? items : [items];
+            if (itemsArray.length === 0) return "No items selected.";
+
+            let outputText = `Selected ${itemsArray.length} item(s):\n`;
+            itemsArray.forEach(item => {
+                outputText += `------------------------------\n`;
+                outputText += `Name: ${item.name}\n`;
+                outputText += `Path: ${item.path}\n`;
+                outputText += `Type: ${item.is_dir ? 'Directory' : 'File'}\n`;
+                if (!item.is_dir && item.size !== undefined) {
+                    outputText += `Size: ${item.size} bytes\n`;
+                }
+                // You could add more properties like item.created, item.modified
+            });
+            return outputText;
+        }
+
+        document.getElementById('open-picker-btn').addEventListener('click', () => {
+            const outputElId = 'picker-output';
+            const allowMultiple = document.getElementById('picker-multiple').checked;
+            const acceptFilterInput = document.getElementById('picker-accept').value.trim();
+
+            const options = {
+                multiple: allowMultiple
+            };
+
+            if (acceptFilterInput) {
+                // If input contains commas, treat as an array, otherwise as a string
+                options.accept = acceptFilterInput.includes(',') ? acceptFilterInput.split(',').map(s => s.trim()) : acceptFilterInput;
+            }
+
+            displayOutput(outputElId, 'Opening file picker with options: ' + JSON.stringify(options));
+
+            puter.ui.showOpenFilePicker(options)
+                .then(selectedItems => {
+                    displayOutput(outputElId, formatFileItemsForDisplay(selectedItems));
+                    if(selectedItems){
+                        // Example: Log content of the first selected text file
+                        const firstFile = Array.isArray(selectedItems) ? selectedItems[0] : selectedItems;
+                        if(firstFile && !firstFile.is_dir && /\.(txt|md|json|js|html|css)$/i.test(firstFile.name)){
+                            firstFile.read()
+                                .then(blob => blob.text())
+                                .then(text => {
+                                    console.log(`Content of ${firstFile.name}:`, text.substring(0, 200) + (text.length > 200 ? '...' : ''));
+                                    // Append to output or show in a new area if desired
+                                    let currentOutput = document.getElementById(outputElId).textContent;
+                                    currentOutput += `\n\n--- First File Content (preview) ---\n${text.substring(0,200)}${text.length > 200 ? '...' : ''}`;
+                                    displayOutput(outputElId, currentOutput);
+                                })
+                                .catch(readError => console.error('Error reading file:', readError));
+                        }
+                    }
+                })
+                .catch(error => {
+                    displayOutput(outputElId, `Error showing file picker: ${error.message || error}`, true);
+                    console.error('File picker error:', error);
+                });
+        });
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!-- q: How do I check if a user is signed in before calling Puter APIs? -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checking User Sign-In Status</title>
+    <link rel="stylesheet" href="answer-styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css" rel="stylesheet" />
+    <script>
+      (function() { /* FOUC/FOUWT SCRIPT */ let isDark = false; try { if (window.parent && window.parent.document.body.classList.contains('dark-mode')) { isDark = true; } } catch (e) { try { const savedTheme = localStorage.getItem('faq_theme'); if (savedTheme === 'dark') { isDark = true; } else if (!savedTheme && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } catch (lsError) { if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) { isDark = true; } } } if (isDark) { document.documentElement.classList.add('dark-mode'); } })();
+    </script>
+    <script src="https://js.puter.com/v2/"></script>
+    <style>
+        .tutorial-section { margin-bottom: 30px; }
+        .tutorial-section > p, .tutorial-section > pre.code-example[class*="language-"], .tutorial-section > ul { margin-bottom: 15px; }
+        .try-it-area { margin-top: 20px; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); background-color: #f0f4f8; border: 1px solid #d1d9e0; }
+        html.dark-mode .try-it-area { background-color: #2c323a; border-color: #3e454e; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        .try-it-area h3 { font-size: 1.1em; margin-top: 0; margin-bottom: 15px; padding-bottom: 8px; color: var(--answer-text-primary-light); border-bottom: 1px solid var(--answer-border-light); }
+        html.dark-mode .try-it-area h3 { color: var(--answer-text-primary-dark); border-bottom-color: var(--answer-border-dark); }
+        .try-it-area button { padding: 10px 18px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 0.95em; transition: background-color 0.2s, transform 0.1s; background-color: var(--answer-accent-light); color: white; margin-top: 10px; margin-right: 10px; }
+        html.dark-mode .try-it-area button { background-color: var(--answer-accent-dark); color: #1c1e22; }
+        .try-it-area button:hover { filter: brightness(110%); }
+        .try-it-area button:active { transform: translateY(1px); }
+        .output { margin-top: 15px; padding: 12px; border-radius: 5px; min-height: 50px; white-space: pre-wrap; word-break: break-all; font-size: 0.85em; line-height: 1.5; background-color: #e8ecf0; color: #333; border: 1px dashed #c0c8d0; }
+        html.dark-mode .output { background-color: #22272e; color: var(--answer-text-secondary-dark); border-color: #404852; }
+    </style>
+</head>
+<body>
+    <h1>How do I check if a user is signed in before calling Puter APIs?</h1>
+    <p>Puter.js often handles authentication automatically. When you call an API that requires authentication (like most <code>puter.fs.*</code> or <code>puter.kv.*</code> methods), Puter.js will prompt the user to sign in if they aren't already. However, there are scenarios where you might want to explicitly check the sign-in status or initiate the sign-in process yourself.</p>
+
+    <div class="tutorial-section">
+        <h2>1. Checking Sign-In Status with <code>puter.auth.isSignedIn()</code></h2>
+        <p>The <code>puter.auth.isSignedIn()</code> method synchronously returns <code>true</code> if the user is currently authenticated with Puter for your application, and <code>false</code> otherwise. This is useful for updating your UI based on the authentication state (e.g., showing a "Sign In" button or user-specific content).</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+function checkCurrentAuthStatus() {
+    const isSignedIn = puter.auth.isSignedIn();
+    if (isSignedIn) {
+        console.log("User is currently signed in.");
+        // You could then fetch user info:
+        // puter.auth.getUser().then(user => console.log("User info:", user));
+        return "User is currently signed in.";
+    } else {
+        console.log("User is NOT signed in.");
+        return "User is NOT signed in. Some features may be unavailable or will prompt for sign-in.";
+    }
+}
+
+// Example usage:
+// const statusMessage = checkCurrentAuthStatus();
+// document.getElementById('auth-status-output').textContent = statusMessage;
+        </code></pre>
+    </div>
+
+    <div class="tutorial-section">
+        <h2>2. Initiating Sign-In with <code>puter.auth.signIn()</code></h2>
+        <p>If the user is not signed in and you want to proactively prompt them (e.g., when they click a "Connect to Puter" button), you can use <code>puter.auth.signIn()</code>. This method opens a Puter authentication popup. It returns a Promise that resolves to <code>true</code> when the user successfully signs in. If the user cancels, the Promise might reject or simply not resolve, depending on the Puter.js version and context (it's generally designed to resolve on success).</p>
+        <div class="info-box">
+            <strong>Important:</strong> Because <code>puter.auth.signIn()</code> opens a popup window, it **must** be called as a direct result of a user interaction (like a button click). Browsers block popups initiated without user gestures.
+        </div>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function attemptSignIn() {
+    if (puter.auth.isSignedIn()) {
+        console.log("User is already signed in.");
+        return "User is already signed in. No need to sign in again.";
+    }
+
+    console.log("User not signed in. Attempting to initiate sign-in...");
+    try {
+        const signInSuccess = await puter.auth.signIn();
+        if (signInSuccess) { // Typically resolves to true on success
+            console.log("Sign-in successful!");
+            // You can now re-check status or fetch user data
+            // const user = await puter.auth.getUser();
+            // console.log("User:", user);
+            return "Sign-in successful! User is now authenticated.";
+        } else {
+            // This path might not be hit if signIn() only resolves on success or rejects on cancel.
+            console.log("Sign-in process completed, but status is not explicitly success (or was cancelled).");
+            return "Sign-in process completed. Status: " + (puter.auth.isSignedIn() ? "Signed In" : "Not Signed In");
+        }
+    } catch (error) {
+        console.error("Sign-in error or cancelled by user:", error);
+        return "Sign-in process failed or was cancelled by the user. Error: " + error.message;
+    }
+}
+        </code></pre>
+    </div>
+    
+    <div class="tutorial-section">
+        <h2>3. Getting User Information with <code>puter.auth.getUser()</code></h2>
+        <p>Once a user is signed in, you can retrieve basic information about them using <code>puter.auth.getUser()</code>. This returns a Promise that resolves to an object containing details like <code>uuid</code>, <code>username</code>, and <code>email_confirmed</code>.</p>
+        <pre class="code-example line-numbers"><code class="language-javascript">
+async function fetchPuterUser() {
+    if (!puter.auth.isSignedIn()) {
+        return "User is not signed in. Please sign in first to get user details.";
+    }
+    try {
+        const user = await puter.auth.getUser();
+        console.log("Current user details:", user);
+        return `User Details:\nUUID: ${user.uuid}\nUsername: ${user.username}\nEmail Confirmed: ${user.email_confirmed}`;
+    } catch (error) {
+        console.error("Error fetching user details:", error);
+        return "Error fetching user details: " + error.message;
+    }
+}
+        </code></pre>
+    </div>
+
+
+    <div class="tutorial-section">
+        <h2>4. Try It Yourself: Authentication Checks</h2>
+        <div class="try-it-area">
+            <h3>Test Authentication Functions</h3>
+            <button id="check-status-btn">Check Current Sign-In Status</button>
+            <button id="initiate-signin-btn">Initiate Sign-In</button>
+            <button id="get-user-btn">Get User Info (if signed in)</button>
+            <button id="signout-btn" style="background-color: #dc3545;">Sign Out (if signed in)</button>
+            <div class="output" id="auth-status-output">Authentication status will appear here...</div>
+        </div>
+    </div>
+
+    <script>
+        function displayAuthOutput(message, isError = false) {
+            const el = document.getElementById('auth-status-output');
+            const isDarkMode = document.documentElement.classList.contains('dark-mode');
+            if (typeof message === 'object') {
+                el.textContent = JSON.stringify(message, null, 2);
+            } else {
+                el.textContent = message;
+            }
+            if (isError) {
+                el.style.color = isDarkMode ? '#ff7b7b' : '#d9534f';
+            } else {
+                el.style.color = isDarkMode ? 'var(--answer-text-secondary-dark)' : '#333';
+            }
+        }
+
+        // Check Status
+        document.getElementById('check-status-btn').addEventListener('click', () => {
+            const isSignedIn = puter.auth.isSignedIn();
+            let msg = isSignedIn ? "User IS currently signed in." : "User is NOT currently signed in.";
+            if (isSignedIn) {
+                puter.auth.getUser().then(user => {
+                    msg += `\nUsername: ${user.username}`;
+                    displayAuthOutput(msg);
+                }).catch(err => {
+                    displayAuthOutput(msg + "\nCould not get user details: " + err.message, true);
+                });
+            } else {
+                displayAuthOutput(msg);
+            }
+        });
+
+        // Initiate Sign In
+        document.getElementById('initiate-signin-btn').addEventListener('click', async () => {
+            if (puter.auth.isSignedIn()) {
+                displayAuthOutput("User is already signed in.");
+                return;
+            }
+            displayAuthOutput("Attempting to sign in...");
+            try {
+                await puter.auth.signIn(); // Resolves to true on success
+                const user = await puter.auth.getUser();
+                displayAuthOutput(`Sign-in successful! Welcome, ${user.username}.`);
+            } catch (error) {
+                displayAuthOutput(`Sign-in process failed or cancelled. ${error.message || '(No error message)'}`, true);
+                console.error("Sign-in attempt error:", error);
+            }
+        });
+
+        // Get User Info
+        document.getElementById('get-user-btn').addEventListener('click', async () => {
+            if (!puter.auth.isSignedIn()) {
+                displayAuthOutput("User is not signed in. Please sign in first.", true);
+                return;
+            }
+            displayAuthOutput("Fetching user information...");
+            try {
+                const user = await puter.auth.getUser();
+                displayAuthOutput(`User Info:\n${JSON.stringify(user, null, 2)}`);
+            } catch (error) {
+                displayAuthOutput(`Error fetching user info: ${error.message || error}`, true);
+            }
+        });
+        
+        // Sign Out
+        document.getElementById('signout-btn').addEventListener('click', () => {
+            if (!puter.auth.isSignedIn()) {
+                displayAuthOutput("User is not signed in. Nothing to sign out from.");
+                return;
+            }
+            displayAuthOutput("Signing out...");
+            try {
+                 puter.auth.signOut(); // This is synchronous
+                 displayAuthOutput("Sign out successful. User is no longer signed in.");
+            } catch(error){ // Should not typically throw, but good practice
+                 displayAuthOutput("Error during sign out: " + error.message, true);
+            }
+        });
+
+    </script>
+
+    <!-- Prism.js Core and Plugins -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+</body>
+</html>
