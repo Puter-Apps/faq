@@ -1,11 +1,11 @@
 <h1 align="center">
-  <a href="https://puter.com/app/faq" target="_blank">Puter FAQ Center</a>
+  <a href="https://puter.com/app/puter-faq" target="_blank">Puter FAQ Center</a>
 </h1>
 
 <p align="center">A modern, searchable FAQ system for Puter with dark/light theme support and responsive design.</p>
 
 <p align="center">
-  <img src="screenshot.png" alt="Screenshot" width="600" />
+  <img src="screenshot.png" alt="Screenshot"/>
 </p>
 
 <br>
